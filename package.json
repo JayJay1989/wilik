@@ -1,0 +1,12 @@
+{
+  "name": "wishdrop",
+  "private": true,
+  "scripts": {
+    "dev:backend": "cd backend && venv\\Scripts\\python.exe app.py",
+    "dev:frontend": "cd frontend && npm run dev",
+    "dev": "concurrently -n backend,frontend -c blue,green \"npm run dev:backend\" \"npm run dev:frontend\""
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.0"
+  }
+}

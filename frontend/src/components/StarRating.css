@@ -1,0 +1,18 @@
+.star-rating {
+  display: inline-flex;
+  gap: 2px;
+}
+
+.star-rating svg {
+  cursor: pointer;
+  fill: var(--border);
+  transition: fill 0.15s, transform 0.1s;
+}
+
+.star-rating svg:hover {
+  transform: scale(1.15);
+}
+
+.star-rating svg.filled {
+  fill: var(--accent);
+}

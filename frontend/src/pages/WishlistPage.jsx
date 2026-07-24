@@ -1,0 +1,165 @@
+import { useState, useEffect } from 'react'
+import GiftCard from '../components/GiftCard'
+import GiftForm from '../components/GiftForm'
+import { PlusIcon, SparkleIcon } from '../components/Icons'
+import { sortGifts } from '../sortGifts'
+
+const API_BASE = 'http://localhost:5000/api'
+const API_URL = `${API_BASE}/items`
+
+function WishlistPage({ currentUser }) {
+  const [items, setItems] = useState([])
+  const [isAdding, setIsAdding] = useState(false)
+  const [dragState, setDragState] = useState({ draggedId: null, draggedRating: undefined, overId: null })
+
+  useEffect(() => {
+    fetch(API_URL, { credentials: 'include' })
+      .then((response) => response.json())
+      .then((data) => setItems(data))
+  }, [])
+
+  function handleRatingChange(id, rating) {
+    fetch(`${API_URL}/${id}/rating`, {
+      method: 'PATCH',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ rating }),
+    })
+      .then((response) => response.json())
+      .then((updatedGift) => {
+        setItems((current) =>
+          current.map((item) => (item.id === updatedGift.id ? updatedGift : item))
+        )
+      })
+  }
+
+  function handleCreate(values) {
+    fetch(API_URL, {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(values),
+    })
+      .then((response) => response.json())
+      .then((newGift) => {
+        setItems((current) => [...current, newGift])
+        setIsAdding(false)
+      })
+  }
+
+  function handleUpdate(id, values) {
+    fetch(`${API_URL}/${id}`, {
+      method: 'PUT',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(values),
+    })
+      .then((response) => response.json())
+      .then((updatedGift) => {
+        setItems((current) =>
+          current.map((item) => (item.id === updatedGift.id ? updatedGift : item))
+        )
+      })
+  }
+
+  function handleDelete(id) {
+    fetch(`${API_URL}/${id}`, { method: 'DELETE', credentials: 'include' }).then(() => {
+      setItems((current) => current.filter((item) => item.id !== id))
+    })
+  }
+
+  function handleReorder(draggedId, targetId) {
+    const dragged = items.find((item) => item.id === draggedId)
+    const target = items.find((item) => item.id === targetId)
+    if (!dragged || !target || dragged.rating !== target.rating) return
+
+    const group = sortGifts(items).filter((item) => item.rating === dragged.rating)
+    const withoutDragged = group.filter((item) => item.id !== draggedId)
+    const targetIndex = withoutDragged.findIndex((item) => item.id === targetId)
+    withoutDragged.splice(targetIndex, 0, dragged)
+
+    const reordered = withoutDragged.map((item, index) => ({ id: item.id, sort_order: index }))
+
+    setItems((current) =>
+      current.map((item) => {
+        const match = reordered.find((r) => r.id === item.id)
+        return match ? { ...item, sort_order: match.sort_order } : item
+      })
+    )
+
+    reordered.forEach(({ id, sort_order }) => {
+      fetch(`${API_URL}/${id}`, {
+        method: 'PUT',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sort_order }),
+      })
+    })
+  }
+
+  function handleDragStart(id, rating) {
+    setDragState({ draggedId: id, draggedRating: rating, overId: null })
+  }
+
+  function handleDragEnter(id) {
+    setDragState((current) => ({ ...current, overId: id }))
+  }
+
+  function handleDragEnd() {
+    setDragState({ draggedId: null, draggedRating: undefined, overId: null })
+  }
+
+  return (
+    <>
+      <div className="wishlist-toolbar">
+        <h2>{currentUser.list_name}</h2>
+        <button
+          className={isAdding ? undefined : 'btn-primary'}
+          type="button"
+          onClick={() => setIsAdding((current) => !current)}
+        >
+          {isAdding ? (
+            'Cancel'
+          ) : (
+            <>
+              <PlusIcon width={14} height={14} strokeWidth={3} /> New item
+            </>
+          )}
+        </button>
+      </div>
+      <main>
+        <div className="gift-grid">
+          {isAdding && <GiftForm onSubmit={handleCreate} onCancel={() => setIsAdding(false)} />}
+          {!isAdding && items.length === 0 && (
+            <div className="empty-state">
+              <SparkleIcon />
+              <h3>Your wishlist is empty</h3>
+              <p>Add your first gift idea to get started</p>
+              <button className="btn-primary" type="button" onClick={() => setIsAdding(true)}>
+                <PlusIcon width={14} height={14} strokeWidth={3} /> New item
+              </button>
+            </div>
+          )}
+          {sortGifts(items).map((item) => (
+            <GiftCard
+              key={item.id}
+              gift={item}
+              currency={currentUser.currency}
+              decimalSeparator={currentUser.decimal_separator}
+              onRatingChange={handleRatingChange}
+              onUpdate={handleUpdate}
+              onDelete={handleDelete}
+              onReorder={handleReorder}
+              dragState={dragState}
+              onDragStart={handleDragStart}
+              onDragEnter={handleDragEnter}
+              onDragEnd={handleDragEnd}
+            />
+          ))}
+        </div>
+      </main>
+    </>
+  )
+}
+
+export default WishlistPage
