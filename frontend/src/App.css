@@ -682,16 +682,50 @@ button:hover {
 
 .user-admin__list li {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
+  flex-direction: column;
   padding: 6px 4px;
   font-size: 14px;
+}
+
+.user-admin__row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
 }
 
 .user-admin__row-actions {
   display: flex;
   align-items: center;
   gap: 8px;
+}
+
+.user-admin__edit-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 8px 0 4px;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--code-bg);
+}
+
+.user-admin__edit-panel label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 13px;
+  color: var(--text);
+}
+
+.user-admin__edit-panel input {
+  font: inherit;
+  font-size: 14px;
+  padding: 6px 10px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--bg);
+  color: var(--text-h);
 }
 
 .gift-form .user-admin__checkbox {

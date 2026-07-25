@@ -273,6 +273,30 @@ def reset_password(user_id):
     return jsonify(user.to_dict())
 
 
+@app.route("/api/users/<int:user_id>", methods=["PUT"])
+@login_required
+def update_user(user_id):
+    if not current_user.is_admin:
+        return jsonify({"error": "Admin only"}), 403
+    user = db.get_or_404(User, user_id)
+    data = request.get_json()
+
+    new_username = data.get("username", user.username).strip()
+    if not new_username:
+        return jsonify({"error": "Username can't be empty"}), 400
+    if new_username.lower() != user.username.lower() and find_user_by_username(new_username):
+        return jsonify({"error": "Username already taken"}), 409
+
+    new_list_name = data.get("list_name", user.list_name).strip()
+    if not new_list_name:
+        return jsonify({"error": "Wishlist name can't be empty"}), 400
+
+    user.username = new_username
+    user.list_name = new_list_name
+    db.session.commit()
+    return jsonify(user.to_dict())
+
+
 @app.route("/api/scrape", methods=["POST"])
 @login_required
 def scrape_url():

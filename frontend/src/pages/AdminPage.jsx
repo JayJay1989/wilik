@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
-import { TrashIcon } from '../components/Icons'
+import { PencilIcon, TrashIcon } from '../components/Icons'
 
 const API_BASE = 'http://localhost:5000/api'
 
@@ -13,6 +13,10 @@ function AdminPage({ currentUser, appName, onAppNameChange }) {
   const [userError, setUserError] = useState(null)
   const [resetMessage, setResetMessage] = useState(null)
   const [createMessage, setCreateMessage] = useState(null)
+  const [editingUserId, setEditingUserId] = useState(null)
+  const [editUsername, setEditUsername] = useState('')
+  const [editListName, setEditListName] = useState('')
+  const [editError, setEditError] = useState(null)
 
   useEffect(() => {
     fetch(`${API_BASE}/users`, { credentials: 'include' })
@@ -80,6 +84,33 @@ function AdminPage({ currentUser, appName, onAppNameChange }) {
     )
   }
 
+  function startEditUser(user) {
+    setEditingUserId(user.id)
+    setEditUsername(user.username)
+    setEditListName(user.list_name)
+    setEditError(null)
+  }
+
+  function handleEditSubmit(event, user) {
+    event.preventDefault()
+    setEditError(null)
+    fetch(`${API_BASE}/users/${user.id}`, {
+      method: 'PUT',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username: editUsername, list_name: editListName }),
+    }).then((response) => {
+      if (!response.ok) {
+        response.json().then((data) => setEditError(data.error))
+        return
+      }
+      response.json().then((updatedUser) => {
+        setUsers((current) => current.map((u) => (u.id === updatedUser.id ? updatedUser : u)))
+        setEditingUserId(null)
+      })
+    })
+  }
+
   return (
     <div className="page">
       <Link className="page__back" to="/">
@@ -89,13 +120,11 @@ function AdminPage({ currentUser, appName, onAppNameChange }) {
 
       <h3>App name</h3>
       <form className="gift-form" onSubmit={handleAppNameSubmit}>
-        <span className="inline-field">
-          <input value={appNameInput} onChange={(event) => setAppNameInput(event.target.value)} required />
-          <button type="submit" className="btn-primary">
-            Save
-          </button>
-        </span>
+        <input value={appNameInput} onChange={(event) => setAppNameInput(event.target.value)} required />
         {appNameError && <p className="form-error">{appNameError}</p>}
+        <div className="gift-form__actions">
+          <button type="submit">Change app name</button>
+        </div>
       </form>
 
       <h3>Users</h3>
@@ -104,26 +133,72 @@ function AdminPage({ currentUser, appName, onAppNameChange }) {
         <ul className="user-admin__list">
           {users.map((user) => (
             <li key={user.id}>
-              <span>
-                {user.username}
-                {user.is_admin ? ' (admin)' : ''}
-                {user.must_change_password ? ' (setup pending)' : ''}
-              </span>
-              {user.id !== currentUser.id && (
+              <div className="user-admin__row">
+                <span>
+                  {user.username}
+                  {user.is_admin ? ' (admin)' : ''}
+                  {user.must_change_password ? ' (setup pending)' : ''}
+                </span>
                 <span className="user-admin__row-actions">
-                  <button type="button" className="btn-primary" onClick={() => handleResetPassword(user)}>
-                    Reset password
-                  </button>
                   <button
                     type="button"
                     className="icon-button"
-                    aria-label="Delete user"
-                    title="Delete user"
-                    onClick={() => handleDeleteUser(user)}
+                    aria-label="Edit user"
+                    title="Edit user"
+                    onClick={() => (editingUserId === user.id ? setEditingUserId(null) : startEditUser(user))}
                   >
-                    <TrashIcon />
+                    <PencilIcon />
                   </button>
+                  {user.id !== currentUser.id && (
+                    <button
+                      type="button"
+                      className="icon-button"
+                      aria-label="Delete user"
+                      title="Delete user"
+                      onClick={() => handleDeleteUser(user)}
+                    >
+                      <TrashIcon />
+                    </button>
+                  )}
                 </span>
+              </div>
+              {editingUserId === user.id && (
+                <form className="user-admin__edit-panel" onSubmit={(event) => handleEditSubmit(event, user)}>
+                  {user.id !== currentUser.id && (
+                    <label>
+                      Password
+                      <div className="gift-form__actions">
+                        <button type="button" className="btn-primary" onClick={() => handleResetPassword(user)}>
+                          Reset password
+                        </button>
+                      </div>
+                    </label>
+                  )}
+                  <label>
+                    Username
+                    <input
+                      value={editUsername}
+                      onChange={(event) => setEditUsername(event.target.value)}
+                      required
+                      autoFocus
+                    />
+                  </label>
+                  <label>
+                    Wishlist name
+                    <input
+                      value={editListName}
+                      onChange={(event) => setEditListName(event.target.value)}
+                      required
+                    />
+                  </label>
+                  {editError && <p className="form-error">{editError}</p>}
+                  <div className="gift-form__actions">
+                    <button type="submit">Save</button>
+                    <button type="button" onClick={() => setEditingUserId(null)}>
+                      Cancel
+                    </button>
+                  </div>
+                </form>
               )}
             </li>
           ))}
