@@ -1,6 +1,8 @@
 import { useState } from 'react'
 import StarRating from './StarRating'
 
+const API_BASE = 'http://localhost:5000/api'
+
 function GiftForm({ initialValues, onSubmit, onCancel }) {
   const [values, setValues] = useState({
     title: initialValues?.title ?? '',
@@ -14,10 +16,39 @@ function GiftForm({ initialValues, onSubmit, onCancel }) {
     quantity: initialValues?.quantity ?? 1,
   })
   const [rating, setRating] = useState(initialValues?.rating ?? null)
+  const [scraping, setScraping] = useState(false)
+  const [scrapeError, setScrapeError] = useState(null)
 
   function handleChange(event) {
     const { name, value } = event.target
     setValues((current) => ({ ...current, [name]: value }))
+  }
+
+  function handleFetchDetails() {
+    setScraping(true)
+    setScrapeError(null)
+    fetch(`${API_BASE}/scrape`, {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ url: values.url }),
+    })
+      .then((response) => response.json().then((data) => ({ ok: response.ok, data })))
+      .then(({ ok, data }) => {
+        if (!ok) {
+          setScrapeError(data.error || 'Could not fetch details for that URL')
+          return
+        }
+        setValues((current) => ({
+          ...current,
+          title: data.title || current.title,
+          image_url: data.image_url || current.image_url,
+          brand: data.brand || current.brand,
+          price: data.price != null ? data.price : current.price,
+        }))
+      })
+      .catch(() => setScrapeError('Could not fetch details for that URL'))
+      .finally(() => setScraping(false))
   }
 
   function handleSubmit(event) {
@@ -34,8 +65,19 @@ function GiftForm({ initialValues, onSubmit, onCancel }) {
     <form className="gift-form" onSubmit={handleSubmit}>
       <label>
         URL
-        <input name="url" value={values.url} onChange={handleChange} placeholder="https://..." />
+        <span className="inline-field">
+          <input name="url" value={values.url} onChange={handleChange} placeholder="https://..." />
+          <button
+            type="button"
+            className="btn-primary"
+            onClick={handleFetchDetails}
+            disabled={!values.url || scraping}
+          >
+            {scraping ? 'Fetching…' : 'Fetch details'}
+          </button>
+        </span>
       </label>
+      {scrapeError && <p className="form-error">{scrapeError}</p>}
       <label>
         Image URL
         <input name="image_url" value={values.image_url} onChange={handleChange} placeholder="https://..." />
