@@ -534,6 +534,17 @@ def delete_item(item_id):
     return "", 204
 
 
+@app.route("/api/items/<int:item_id>/claim-info", methods=["GET"])
+@login_required
+def item_claim_info(item_id):
+    # deliberately not part of the normal item list response (see Gift.to_dict) --
+    # the owner has to actively ask, e.g. right before deleting something
+    gift = db.get_or_404(Gift, item_id)
+    if gift.owner_id != current_user.id:
+        return jsonify({"error": "Not your item"}), 403
+    return jsonify({"claimed_by": gift.claimed_by})
+
+
 @app.route("/api/account/share-token", methods=["POST"])
 @login_required
 def regenerate_share_token():

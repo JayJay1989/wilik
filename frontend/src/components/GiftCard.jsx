@@ -5,6 +5,8 @@ import ImagePlaceholder from './ImagePlaceholder'
 import { PencilIcon, TrashIcon, ExternalLinkIcon, GripIcon, CheckIcon, UndoIcon } from './Icons'
 import { formatPrice } from '../formatPrice'
 
+const API_BASE = 'http://localhost:5000/api'
+
 function GiftCard({
   gift,
   currency,
@@ -98,8 +100,8 @@ function GiftCard({
             <button
               type="button"
               className="icon-button"
-              aria-label={gift.received ? 'Move back to wishlist' : 'I got this'}
-              title={gift.received ? 'Move back to wishlist' : 'I got this'}
+              aria-label={gift.received ? 'Move back to wishlist' : 'Received'}
+              title={gift.received ? 'Move back to wishlist' : 'Received'}
               onClick={(event) => {
                 event.stopPropagation()
                 onReceivedChange(gift.id, !gift.received)
@@ -127,7 +129,20 @@ function GiftCard({
             title="Delete"
             onClick={(event) => {
               event.stopPropagation()
-              if (confirm(`Delete "${gift.title}"?`)) onDelete(gift.id)
+              fetch(`${API_BASE}/items/${gift.id}/claim-info`, { credentials: 'include' })
+                .then((response) => response.json())
+                .then((data) => {
+                  if (!data.claimed_by) {
+                    if (confirm(`Delete "${gift.title}"?`)) onDelete(gift.id)
+                    return
+                  }
+                  const proceed = confirm(
+                    `"${gift.title}" has already been claimed by someone. (If you received this gift already, use the checkmark instead to archive it to your Received list.) Delete anyway?`
+                  )
+                  if (!proceed) return
+                  onDelete(gift.id)
+                  alert(`Deleted. It had been claimed by ${data.claimed_by}.`)
+                })
             }}
           >
             <TrashIcon />
