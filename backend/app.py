@@ -143,7 +143,6 @@ def update_account():
         return jsonify({"error": "Invalid theme color"}), 400
 
     current_user.username = new_username
-    current_user.email = data.get("email", current_user.email)
     current_user.list_name = data.get("list_name", current_user.list_name)
     current_user.currency = currency
     current_user.decimal_separator = decimal_separator

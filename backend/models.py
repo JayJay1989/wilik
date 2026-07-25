@@ -44,7 +44,6 @@ class User(UserMixin, db.Model):
             "id": self.id,
             "username": self.username,
             "is_admin": self.is_admin,
-            "email": self.email,
             "list_name": self.list_name or f"{self.username}'s wishlist",
             "currency": self.currency,
             "decimal_separator": self.decimal_separator,

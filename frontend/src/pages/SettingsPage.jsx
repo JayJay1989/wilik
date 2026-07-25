@@ -40,10 +40,6 @@ function SettingsPage({ currentUser, onUpdate }) {
   const [passwordError, setPasswordError] = useState(null)
   const [passwordSaved, setPasswordSaved] = useState(false)
 
-  const [email, setEmail] = useState(currentUser.email ?? '')
-  const [emailError, setEmailError] = useState(null)
-  const [emailSaved, setEmailSaved] = useState(false)
-
   const [listName, setListName] = useState(currentUser.list_name)
   const [currency, setCurrency] = useState(currentUser.currency)
   const [decimalSeparator, setDecimalSeparator] = useState(currentUser.decimal_separator)
@@ -69,27 +65,6 @@ function SettingsPage({ currentUser, onUpdate }) {
       response.json().then((updatedUser) => {
         onUpdate(updatedUser)
         setUsernameSaved(true)
-      })
-    })
-  }
-
-  function handleEmailSubmit(event) {
-    event.preventDefault()
-    setEmailError(null)
-    setEmailSaved(false)
-    fetch(`${API_BASE}/account`, {
-      method: 'PUT',
-      credentials: 'include',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email: email === '' ? null : email }),
-    }).then((response) => {
-      if (!response.ok) {
-        response.json().then((data) => setEmailError(data.error))
-        return
-      }
-      response.json().then((updatedUser) => {
-        onUpdate(updatedUser)
-        setEmailSaved(true)
       })
     })
   }
@@ -277,20 +252,6 @@ function SettingsPage({ currentUser, onUpdate }) {
         <div className="gift-form__actions">
           <button type="submit">Change password</button>
         </div>
-      </form>
-
-      <form className="gift-form" onSubmit={handleEmailSubmit}>
-        <label>
-          Email
-          <span className="inline-field">
-            <input type="email" value={email} onChange={(event) => setEmail(event.target.value)} />
-            <button type="submit" className="btn-primary">
-              Save
-            </button>
-          </span>
-        </label>
-        {emailError && <p className="form-error">{emailError}</p>}
-        {emailSaved && <p className="form-success">Saved</p>}
       </form>
     </div>
   )
