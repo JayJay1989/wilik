@@ -16,6 +16,7 @@ class User(UserMixin, db.Model):
     decimal_separator = db.Column(db.String(10), nullable=False, default=",")
     theme_color = db.Column(db.String(7), nullable=True)  # hex code, e.g. "#0d9488"; null = default theme
     must_change_password = db.Column(db.Boolean, nullable=False, default=False)
+    show_image_placeholder = db.Column(db.Boolean, nullable=False, default=True)
 
     gifts = db.relationship("Gift", backref="owner", cascade="all, delete-orphan")
 
@@ -39,6 +40,7 @@ class User(UserMixin, db.Model):
             "theme_color": self.theme_color,
             "must_change_password": self.must_change_password,
             "has_password": self.password_hash is not None,
+            "show_image_placeholder": self.show_image_placeholder,
         }
 
 

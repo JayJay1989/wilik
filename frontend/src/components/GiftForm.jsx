@@ -33,6 +33,24 @@ function GiftForm({ initialValues, onSubmit, onCancel }) {
   return (
     <form className="gift-form" onSubmit={handleSubmit}>
       <label>
+        URL
+        <input name="url" value={values.url} onChange={handleChange} placeholder="https://..." />
+      </label>
+      <label>
+        Image URL
+        <input name="image_url" value={values.image_url} onChange={handleChange} placeholder="https://..." />
+      </label>
+      <div className="gift-form__row">
+        <label>
+          Label
+          <input name="label" value={values.label} onChange={handleChange} placeholder="e.g. Board game, Perfume, Book ..." />
+        </label>
+        <label>
+          Brand, creator or seller
+          <input name="brand" value={values.brand} onChange={handleChange} placeholder="e.g. 999 Games, Chanel, George Orwell ..." />
+        </label>
+      </div>
+      <label>
         <span>
           Title <span className="required">*</span>
         </span>
@@ -44,32 +62,14 @@ function GiftForm({ initialValues, onSubmit, onCancel }) {
           required
         />
       </label>
-      <div className="gift-form__row">
-        <label>
-          Label
-          <input name="label" value={values.label} onChange={handleChange} placeholder="e.g. Board game, Perfume, Book ..." />
-        </label>
-        <label>
-          Brand
-          <input name="brand" value={values.brand} onChange={handleChange} placeholder="e.g. 999 Games, Chanel, Penguin Books ..." />
-        </label>
-      </div>
       <label>
-        Options
+        Product options (separate with semicolons)
         <input
           name="options"
           value={values.options}
           onChange={handleChange}
-          placeholder="e.g. Size, color, edition ..."
+          placeholder="e.g. Medium; 50ml; Black, blue or yellow"
         />
-      </label>
-      <label>
-        URL
-        <input name="url" value={values.url} onChange={handleChange} placeholder="https://..." />
-      </label>
-      <label>
-        Image URL
-        <input name="image_url" value={values.image_url} onChange={handleChange} placeholder="https://..." />
       </label>
       <label>
         Description
@@ -86,7 +86,7 @@ function GiftForm({ initialValues, onSubmit, onCancel }) {
           <input
             name="price"
             type="number"
-            step="0.01"
+            step="any"
             value={values.price}
             onChange={handleChange}
             placeholder="0.00"

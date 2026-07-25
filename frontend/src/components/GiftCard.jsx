@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import StarRating from './StarRating'
 import GiftForm from './GiftForm'
+import ImagePlaceholder from './ImagePlaceholder'
 import { PencilIcon, TrashIcon, ExternalLinkIcon, GripIcon } from './Icons'
 import { formatPrice } from '../formatPrice'
 
@@ -8,6 +9,7 @@ function GiftCard({
   gift,
   currency,
   decimalSeparator,
+  showImagePlaceholder,
   onRatingChange,
   onUpdate,
   onDelete,
@@ -108,7 +110,11 @@ function GiftCard({
           <TrashIcon />
         </button>
       </div>
-      {gift.image_url && <img className="gift-card__img" src={gift.image_url} alt={gift.title} />}
+      {gift.image_url ? (
+        <img className="gift-card__img" src={gift.image_url} alt={gift.title} />
+      ) : (
+        showImagePlaceholder && <ImagePlaceholder id={gift.id} />
+      )}
       <div className="gift-card__body">
         {(gift.label || gift.brand) && (
           <p className="gift-card__eyebrow">
@@ -124,7 +130,19 @@ function GiftCard({
             {gift.url && <ExternalLinkIcon className="gift-card__link-icon" />}
           </span>
         </h3>
-        {gift.options && <p className="gift-card__options">{gift.options}</p>}
+        {gift.options && (
+          <span className="gift-card__options">
+            {gift.options
+              .split(';')
+              .map((option) => option.trim())
+              .filter(Boolean)
+              .map((option, index) => (
+                <span key={index} className="gift-card__option-badge">
+                  {option}
+                </span>
+              ))}
+          </span>
+        )}
         {gift.description && (
           <p className="gift-card__desc" title={gift.description}>
             {gift.description}

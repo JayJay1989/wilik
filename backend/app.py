@@ -119,6 +119,9 @@ def update_account():
     current_user.currency = currency
     current_user.decimal_separator = decimal_separator
     current_user.theme_color = theme_color
+    current_user.show_image_placeholder = data.get(
+        "show_image_placeholder", current_user.show_image_placeholder
+    )
     db.session.commit()
     return jsonify(current_user.to_dict())
 

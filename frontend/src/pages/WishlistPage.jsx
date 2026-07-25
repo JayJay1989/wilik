@@ -146,6 +146,7 @@ function WishlistPage({ currentUser }) {
               gift={item}
               currency={currentUser.currency}
               decimalSeparator={currentUser.decimal_separator}
+              showImagePlaceholder={currentUser.show_image_placeholder}
               onRatingChange={handleRatingChange}
               onUpdate={handleUpdate}
               onDelete={handleDelete}

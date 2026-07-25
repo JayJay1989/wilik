@@ -23,6 +23,7 @@ function SettingsPage({ currentUser, onUpdate }) {
   const [currency, setCurrency] = useState(currentUser.currency)
   const [decimalSeparator, setDecimalSeparator] = useState(currentUser.decimal_separator)
   const [themeColor, setThemeColor] = useState(currentUser.theme_color)
+  const [showImagePlaceholder, setShowImagePlaceholder] = useState(currentUser.show_image_placeholder)
   const [wishlistError, setWishlistError] = useState(null)
   const [wishlistSaved, setWishlistSaved] = useState(false)
 
@@ -106,6 +107,7 @@ function SettingsPage({ currentUser, onUpdate }) {
         currency,
         decimal_separator: decimalSeparator,
         theme_color: themeColor,
+        show_image_placeholder: showImagePlaceholder,
       }),
     }).then((response) => {
       if (!response.ok) {
@@ -165,6 +167,14 @@ function SettingsPage({ currentUser, onUpdate }) {
               />
             ))}
           </span>
+        </label>
+        <label className="user-admin__checkbox">
+          <input
+            type="checkbox"
+            checked={showImagePlaceholder}
+            onChange={(event) => setShowImagePlaceholder(event.target.checked)}
+          />
+          Show a placeholder image for items without a photo
         </label>
         {wishlistError && <p className="form-error">{wishlistError}</p>}
         {wishlistSaved && <p className="form-success">Saved</p>}
