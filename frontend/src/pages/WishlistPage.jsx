@@ -4,7 +4,7 @@ import GiftForm from '../components/GiftForm'
 import { PlusIcon, SparkleIcon } from '../components/Icons'
 import { sortGifts } from '../sortGifts'
 
-const API_BASE = 'http://localhost:5000/api'
+const API_BASE = '/api'
 const API_URL = `${API_BASE}/items`
 
 function WishlistPage({ currentUser }) {

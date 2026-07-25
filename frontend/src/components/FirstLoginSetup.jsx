@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import Logo from './Logo'
 
-const API_BASE = 'http://localhost:5000/api'
+const API_BASE = '/api'
 
 function FirstLoginSetup({ appName, currentUser, onUpdate }) {
   const [newUsername, setNewUsername] = useState(currentUser.username)

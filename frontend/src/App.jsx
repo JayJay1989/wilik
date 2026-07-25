@@ -12,7 +12,7 @@ import PublicWishlistPage from './pages/PublicWishlistPage'
 import { themeStyle } from './themePresets'
 import './App.css'
 
-const API_BASE = 'http://localhost:5000/api'
+const API_BASE = '/api'
 
 function AuthenticatedApp({ appName, onAppNameChange }) {
   const [currentUser, setCurrentUser] = useState(undefined) // undefined = still checking, null = logged out

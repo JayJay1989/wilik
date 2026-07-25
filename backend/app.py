@@ -1,5 +1,6 @@
 import ipaddress
 import json
+import os
 import secrets
 import socket
 from urllib.parse import urlparse
@@ -47,7 +48,8 @@ def is_safe_scrape_url(url):
 
 
 app = Flask(__name__)
-app.config["SECRET_KEY"] = "dev-secret-change-me"  # signs the session cookie
+# signs the session cookie -- override via env in any real deployment
+app.config["SECRET_KEY"] = os.environ.get("SECRET_KEY", "dev-secret-change-me")
 app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///wishdrop.db"
 
 # allows the React app (different port) to send/receive the session cookie

@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import StarRating from './StarRating'
 
-const API_BASE = 'http://localhost:5000/api'
+const API_BASE = '/api'
 
 function GiftForm({ initialValues, onSubmit, onCancel }) {
   const [values, setValues] = useState({

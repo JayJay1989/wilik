@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { PencilIcon, TrashIcon } from '../components/Icons'
 
-const API_BASE = 'http://localhost:5000/api'
+const API_BASE = '/api'
 
 function AdminPage({ currentUser, appName, onAppNameChange }) {
   const [users, setUsers] = useState([])

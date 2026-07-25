@@ -9,7 +9,7 @@ function Login({ appName, onLogin }) {
   function handleSubmit(event) {
     event.preventDefault()
     setError(null)
-    fetch('http://localhost:5000/api/login', {
+    fetch('/api/login', {
       method: 'POST',
       credentials: 'include',
       headers: { 'Content-Type': 'application/json' },

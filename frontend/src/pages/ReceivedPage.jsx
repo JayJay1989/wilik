@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom'
 import GiftCard from '../components/GiftCard'
 import { ArchiveIcon } from '../components/Icons'
 
-const API_BASE = 'http://localhost:5000/api'
+const API_BASE = '/api'
 const API_URL = `${API_BASE}/items`
 
 const NOOP_DRAG_STATE = { draggedId: null, draggedRating: undefined, overId: null }

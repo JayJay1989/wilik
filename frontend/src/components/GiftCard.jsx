@@ -5,7 +5,7 @@ import ImagePlaceholder from './ImagePlaceholder'
 import { PencilIcon, TrashIcon, ExternalLinkIcon, GripIcon, CheckIcon, UndoIcon } from './Icons'
 import { formatPrice } from '../formatPrice'
 
-const API_BASE = 'http://localhost:5000/api'
+const API_BASE = '/api'
 
 function GiftCard({
   gift,

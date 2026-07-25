@@ -6,7 +6,7 @@ import { GiftIcon, SparkleIcon } from '../components/Icons'
 import { sortGifts } from '../sortGifts'
 import { themeStyle } from '../themePresets'
 
-const API_BASE = 'http://localhost:5000/api'
+const API_BASE = '/api'
 
 function PublicWishlistPage({ appName }) {
   const { token } = useParams()
