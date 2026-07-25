@@ -3,28 +3,20 @@ import { Routes, Route, Navigate, Link } from 'react-router-dom'
 import Login from './components/Login'
 import FirstLoginSetup from './components/FirstLoginSetup'
 import Logo from './components/Logo'
-import { SettingsIcon, KeyIcon, LogoutIcon, UserIcon } from './components/Icons'
+import { SettingsIcon, KeyIcon, LogoutIcon, UserIcon, ArchiveIcon, MenuIcon, CloseIcon } from './components/Icons'
 import WishlistPage from './pages/WishlistPage'
+import ReceivedPage from './pages/ReceivedPage'
 import SettingsPage from './pages/SettingsPage'
 import AdminPage from './pages/AdminPage'
+import PublicWishlistPage from './pages/PublicWishlistPage'
 import { themeStyle } from './themePresets'
 import './App.css'
 
 const API_BASE = 'http://localhost:5000/api'
 
-function App() {
-  const [appName, setAppName] = useState('Wishdrop')
+function AuthenticatedApp({ appName, onAppNameChange }) {
   const [currentUser, setCurrentUser] = useState(undefined) // undefined = still checking, null = logged out
-
-  useEffect(() => {
-    fetch(`${API_BASE}/settings`)
-      .then((response) => response.json())
-      .then((data) => setAppName(data.app_name))
-  }, [])
-
-  useEffect(() => {
-    document.title = appName
-  }, [appName])
+  const [menuOpen, setMenuOpen] = useState(false)
 
   useEffect(() => {
     fetch(`${API_BASE}/me`, { credentials: 'include' })
@@ -53,31 +45,50 @@ function App() {
             <span>{appName}</span>
           </Link>
           <span className="topbar__user">
-            <UserIcon /> {currentUser.username}
+            <UserIcon />
+            <span className="topbar__user-name">{currentUser.username}</span>
           </span>
         </div>
-        <div className="topbar__actions">
-          <Link to="/settings">
+        <button
+          type="button"
+          className="topbar__menu-toggle"
+          aria-label={menuOpen ? 'Close menu' : 'Open menu'}
+          onClick={() => setMenuOpen((open) => !open)}
+        >
+          {menuOpen ? <CloseIcon /> : <MenuIcon />}
+        </button>
+        <div className={menuOpen ? 'topbar__actions topbar__actions--open' : 'topbar__actions'}>
+          <Link to="/received" onClick={() => setMenuOpen(false)}>
+            <ArchiveIcon /> Received
+          </Link>
+          <Link to="/settings" onClick={() => setMenuOpen(false)}>
             <SettingsIcon /> Settings
           </Link>
           {currentUser.is_admin && (
-            <Link to="/admin">
+            <Link to="/admin" onClick={() => setMenuOpen(false)}>
               <KeyIcon /> Admin
             </Link>
           )}
-          <button type="button" onClick={handleLogout}>
+          <button
+            type="button"
+            onClick={() => {
+              setMenuOpen(false)
+              handleLogout()
+            }}
+          >
             <LogoutIcon /> Log out
           </button>
         </div>
       </nav>
       <Routes>
         <Route path="/" element={<WishlistPage currentUser={currentUser} />} />
+        <Route path="/received" element={<ReceivedPage currentUser={currentUser} />} />
         <Route path="/settings" element={<SettingsPage currentUser={currentUser} onUpdate={setCurrentUser} />} />
         <Route
           path="/admin"
           element={
             currentUser.is_admin ? (
-              <AdminPage currentUser={currentUser} appName={appName} onAppNameChange={setAppName} />
+              <AdminPage currentUser={currentUser} appName={appName} onAppNameChange={onAppNameChange} />
             ) : (
               <Navigate to="/" replace />
             )
@@ -85,6 +96,27 @@ function App() {
         />
       </Routes>
     </div>
+  )
+}
+
+function App() {
+  const [appName, setAppName] = useState('Wishdrop')
+
+  useEffect(() => {
+    fetch(`${API_BASE}/settings`)
+      .then((response) => response.json())
+      .then((data) => setAppName(data.app_name))
+  }, [])
+
+  useEffect(() => {
+    document.title = appName
+  }, [appName])
+
+  return (
+    <Routes>
+      <Route path="/list/:token" element={<PublicWishlistPage appName={appName} />} />
+      <Route path="/*" element={<AuthenticatedApp appName={appName} onAppNameChange={setAppName} />} />
+    </Routes>
   )
 }
 

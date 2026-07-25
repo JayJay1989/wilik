@@ -68,10 +68,27 @@ function WishlistPage({ currentUser }) {
     })
   }
 
+  function handleReceivedChange(id, received) {
+    fetch(`${API_URL}/${id}/received`, {
+      method: 'PATCH',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ received }),
+    })
+      .then((response) => response.json())
+      .then((updatedGift) => {
+        setItems((current) => current.map((item) => (item.id === updatedGift.id ? updatedGift : item)))
+      })
+  }
+
   function handleReorder(draggedId, targetId) {
     const dragged = items.find((item) => item.id === draggedId)
     const target = items.find((item) => item.id === targetId)
-    if (!dragged || !target || dragged.rating !== target.rating) return
+    if (!dragged || !target) return
+    if (dragged.rating !== target.rating) {
+      alert('Gifts can only be reordered within the same star rating.')
+      return
+    }
 
     const group = sortGifts(items).filter((item) => item.rating === dragged.rating)
     const withoutDragged = group.filter((item) => item.id !== draggedId)
@@ -109,6 +126,8 @@ function WishlistPage({ currentUser }) {
     setDragState({ draggedId: null, draggedRating: undefined, overId: null })
   }
 
+  const activeItems = items.filter((item) => !item.received)
+
   return (
     <>
       <div className="wishlist-toolbar">
@@ -130,7 +149,7 @@ function WishlistPage({ currentUser }) {
       <main>
         <div className="gift-grid">
           {isAdding && <GiftForm onSubmit={handleCreate} onCancel={() => setIsAdding(false)} />}
-          {!isAdding && items.length === 0 && (
+          {!isAdding && activeItems.length === 0 && (
             <div className="empty-state">
               <SparkleIcon />
               <h3>Your wishlist is empty</h3>
@@ -140,7 +159,7 @@ function WishlistPage({ currentUser }) {
               </button>
             </div>
           )}
-          {sortGifts(items).map((item) => (
+          {sortGifts(activeItems).map((item) => (
             <GiftCard
               key={item.id}
               gift={item}
@@ -151,6 +170,7 @@ function WishlistPage({ currentUser }) {
               onUpdate={handleUpdate}
               onDelete={handleDelete}
               onReorder={handleReorder}
+              onReceivedChange={handleReceivedChange}
               dragState={dragState}
               onDragStart={handleDragStart}
               onDragEnter={handleDragEnter}

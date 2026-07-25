@@ -5,6 +5,31 @@ import { THEME_PRESETS } from '../themePresets'
 const API_BASE = 'http://localhost:5000/api'
 
 function SettingsPage({ currentUser, onUpdate }) {
+  const [shareCopied, setShareCopied] = useState(false)
+  const [shareRegenerating, setShareRegenerating] = useState(false)
+  const shareUrl = `${window.location.origin}/list/${currentUser.share_token}`
+
+  function handleCopyShareUrl() {
+    navigator.clipboard.writeText(shareUrl).then(() => {
+      setShareCopied(true)
+      setTimeout(() => setShareCopied(false), 2000)
+    })
+  }
+
+  function handleRegenerateShareUrl() {
+    if (!confirm("Generate a new link? Your old share link will stop working.")) return
+    setShareRegenerating(true)
+    fetch(`${API_BASE}/account/share-token`, {
+      method: 'POST',
+      credentials: 'include',
+    })
+      .then((response) => response.json())
+      .then((updatedUser) => {
+        onUpdate(updatedUser)
+        setShareRegenerating(false)
+      })
+  }
+
   const [username, setUsername] = useState(currentUser.username)
   const [usernameError, setUsernameError] = useState(null)
   const [usernameSaved, setUsernameSaved] = useState(false)
@@ -127,6 +152,24 @@ function SettingsPage({ currentUser, onUpdate }) {
         ← Back to wishlist
       </Link>
 
+      <h2>Share your wishlist</h2>
+      <div className="card">
+        <p className="page__hint" style={{ margin: '0 0 10px' }}>
+          Anyone with this link can view your list and claim items — you'll never see who claimed what
+        </p>
+        <div className="inline-field">
+          <input className="share-link__input" value={shareUrl} readOnly onFocus={(event) => event.target.select()} />
+          <button type="button" className="btn-primary" onClick={handleCopyShareUrl}>
+            {shareCopied ? 'Copied!' : 'Copy'}
+          </button>
+        </div>
+        <div className="gift-form__actions">
+          <button type="button" className="btn-primary" onClick={handleRegenerateShareUrl} disabled={shareRegenerating}>
+            Generate new link
+          </button>
+        </div>
+      </div>
+
       <h2>Wishlist settings</h2>
       <form className="gift-form" onSubmit={handleWishlistSubmit}>
         <label>
@@ -179,7 +222,7 @@ function SettingsPage({ currentUser, onUpdate }) {
         {wishlistError && <p className="form-error">{wishlistError}</p>}
         {wishlistSaved && <p className="form-success">Saved</p>}
         <div className="gift-form__actions">
-          <button type="submit">Save wishlist settings</button>
+          <button type="submit">Save</button>
         </div>
       </form>
 
@@ -188,13 +231,15 @@ function SettingsPage({ currentUser, onUpdate }) {
       <form className="gift-form" onSubmit={handleUsernameSubmit}>
         <label>
           Username
-          <input value={username} onChange={(event) => setUsername(event.target.value)} required />
+          <span className="inline-field">
+            <input value={username} onChange={(event) => setUsername(event.target.value)} required />
+            <button type="submit" className="btn-primary">
+              Save
+            </button>
+          </span>
         </label>
         {usernameError && <p className="form-error">{usernameError}</p>}
         {usernameSaved && <p className="form-success">Saved</p>}
-        <div className="gift-form__actions">
-          <button type="submit">Save</button>
-        </div>
       </form>
 
       <form className="gift-form" onSubmit={handlePasswordSubmit}>
@@ -237,13 +282,15 @@ function SettingsPage({ currentUser, onUpdate }) {
       <form className="gift-form" onSubmit={handleEmailSubmit}>
         <label>
           Email
-          <input type="email" value={email} onChange={(event) => setEmail(event.target.value)} />
+          <span className="inline-field">
+            <input type="email" value={email} onChange={(event) => setEmail(event.target.value)} />
+            <button type="submit" className="btn-primary">
+              Save
+            </button>
+          </span>
         </label>
         {emailError && <p className="form-error">{emailError}</p>}
         {emailSaved && <p className="form-success">Saved</p>}
-        <div className="gift-form__actions">
-          <button type="submit">Save</button>
-        </div>
       </form>
     </div>
   )

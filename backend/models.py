@@ -1,8 +1,17 @@
+import secrets
+
 from flask_login import UserMixin
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.security import check_password_hash, generate_password_hash
 
 db = SQLAlchemy()
+
+
+SHARE_TOKEN_ALPHABET = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+
+
+def generate_share_token():
+    return "".join(secrets.choice(SHARE_TOKEN_ALPHABET) for _ in range(8))
 
 
 class User(UserMixin, db.Model):
@@ -17,6 +26,8 @@ class User(UserMixin, db.Model):
     theme_color = db.Column(db.String(7), nullable=True)  # hex code, e.g. "#0d9488"; null = default theme
     must_change_password = db.Column(db.Boolean, nullable=False, default=False)
     show_image_placeholder = db.Column(db.Boolean, nullable=False, default=True)
+    # unguessable token for the public, no-login wishlist link; anyone with it can view + claim items
+    share_token = db.Column(db.String(64), unique=True, nullable=False, default=generate_share_token)
 
     gifts = db.relationship("Gift", backref="owner", cascade="all, delete-orphan")
 
@@ -41,6 +52,15 @@ class User(UserMixin, db.Model):
             "must_change_password": self.must_change_password,
             "has_password": self.password_hash is not None,
             "show_image_placeholder": self.show_image_placeholder,
+            "share_token": self.share_token,
+        }
+
+    def public_dict(self):
+        return {
+            "list_name": self.list_name or f"{self.username}'s wishlist",
+            "currency": self.currency,
+            "decimal_separator": self.decimal_separator,
+            "theme_color": self.theme_color,
         }
 
 
@@ -66,9 +86,14 @@ class Gift(db.Model):
     rating = db.Column(db.Integer, nullable=True, default=None)
     quantity = db.Column(db.Integer, nullable=False, default=1)
     sort_order = db.Column(db.Integer, nullable=True, default=None)
+    # claim/purchase state is only ever shown to public-link visitors, never to the owner (would spoil the surprise)
+    claimed_by = db.Column(db.String(100), nullable=True)
+    purchased = db.Column(db.Boolean, nullable=False, default=False)
+    # owner-controlled "I got this" flag: pulls the item off their own active list into the received archive
+    received = db.Column(db.Boolean, nullable=False, default=False)
 
-    def to_dict(self):
-        return {
+    def to_dict(self, include_claim_status=False):
+        data = {
             "id": self.id,
             "title": self.title,
             "label": self.label,
@@ -79,6 +104,11 @@ class Gift(db.Model):
             "description": self.description,
             "price": self.price,
             "rating": self.rating,
+            "received": self.received,
             "quantity": self.quantity,
             "sort_order": self.sort_order,
         }
+        if include_claim_status:
+            data["claimed_by"] = self.claimed_by
+            data["purchased"] = self.purchased
+        return data

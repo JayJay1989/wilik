@@ -88,12 +88,14 @@ function AdminPage({ currentUser, appName, onAppNameChange }) {
       <h2>Admin panel</h2>
 
       <h3>App name</h3>
-      <form className="gift-form user-admin__inline-form" onSubmit={handleAppNameSubmit}>
-        <input value={appNameInput} onChange={(event) => setAppNameInput(event.target.value)} required />
+      <form className="gift-form" onSubmit={handleAppNameSubmit}>
+        <span className="inline-field">
+          <input value={appNameInput} onChange={(event) => setAppNameInput(event.target.value)} required />
+          <button type="submit" className="btn-primary">
+            Save
+          </button>
+        </span>
         {appNameError && <p className="form-error">{appNameError}</p>}
-        <div className="gift-form__actions">
-          <button type="submit">Save</button>
-        </div>
       </form>
 
       <h3>Users</h3>
@@ -109,7 +111,7 @@ function AdminPage({ currentUser, appName, onAppNameChange }) {
               </span>
               {user.id !== currentUser.id && (
                 <span className="user-admin__row-actions">
-                  <button type="button" onClick={() => handleResetPassword(user)}>
+                  <button type="button" className="btn-primary" onClick={() => handleResetPassword(user)}>
                     Reset password
                   </button>
                   <button

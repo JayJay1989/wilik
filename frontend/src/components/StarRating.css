@@ -4,13 +4,20 @@
 }
 
 .star-rating svg {
-  cursor: pointer;
   fill: var(--border);
   transition: fill 0.15s, transform 0.1s;
 }
 
+.star-rating:not(.star-rating--readonly) svg {
+  cursor: default;
+}
+
 .star-rating svg:hover {
   transform: scale(1.15);
+}
+
+.star-rating--readonly svg:hover {
+  transform: none;
 }
 
 .star-rating svg.filled {

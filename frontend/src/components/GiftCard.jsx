@@ -2,7 +2,7 @@ import { useState } from 'react'
 import StarRating from './StarRating'
 import GiftForm from './GiftForm'
 import ImagePlaceholder from './ImagePlaceholder'
-import { PencilIcon, TrashIcon, ExternalLinkIcon, GripIcon } from './Icons'
+import { PencilIcon, TrashIcon, ExternalLinkIcon, GripIcon, CheckIcon, UndoIcon } from './Icons'
 import { formatPrice } from '../formatPrice'
 
 function GiftCard({
@@ -14,6 +14,7 @@ function GiftCard({
   onUpdate,
   onDelete,
   onReorder,
+  onReceivedChange,
   dragState,
   onDragStart,
   onDragEnter,
@@ -48,67 +49,90 @@ function GiftCard({
   if (isDragOver) classNames.push('gift-card--drag-over')
   if (isDragActive && !isDragging && !isValidTarget) classNames.push('gift-card--drag-invalid')
 
+  function handlePointerDown(event) {
+    if (event.target.closest('.gift-card__action-bar-buttons')) return
+    event.preventDefault()
+    onDragStart(gift.id, gift.rating)
+
+    function handlePointerMove(moveEvent) {
+      const el = document.elementFromPoint(moveEvent.clientX, moveEvent.clientY)
+      const card = el && el.closest('.gift-card')
+      onDragEnter(card ? Number(card.dataset.giftId) : null)
+    }
+
+    function finishDrag(upEvent) {
+      window.removeEventListener('pointermove', handlePointerMove)
+      window.removeEventListener('pointerup', finishDrag)
+      window.removeEventListener('pointercancel', finishDrag)
+      const el = document.elementFromPoint(upEvent.clientX, upEvent.clientY)
+      const card = el && el.closest('.gift-card')
+      const targetId = card ? Number(card.dataset.giftId) : null
+      onDragEnd()
+      if (targetId != null && targetId !== gift.id) {
+        onReorder(gift.id, targetId)
+      }
+    }
+
+    window.addEventListener('pointermove', handlePointerMove)
+    window.addEventListener('pointerup', finishDrag)
+    window.addEventListener('pointercancel', finishDrag)
+  }
+
   return (
     <div
       className={classNames.join(' ')}
+      data-gift-id={gift.id}
       onClick={gift.url ? () => window.open(gift.url, '_blank', 'noopener,noreferrer') : undefined}
-      onDragEnter={() => onDragEnter(gift.id)}
-      onDragOver={(event) => {
-        if (isValidTarget) event.preventDefault()
-      }}
-      onDrop={(event) => {
-        event.preventDefault()
-        const draggedId = Number(event.dataTransfer.getData('text/plain'))
-        if (draggedId !== gift.id) onReorder(draggedId, gift.id)
-      }}
     >
-      <span
-        className="gift-card__drag-handle"
-        draggable
+      <div
+        className="gift-card__action-bar"
         title="Drag to reorder within this star rating"
         onClick={(event) => event.stopPropagation()}
-        onDragStart={(event) => {
-          event.stopPropagation()
-          event.dataTransfer.setData('text/plain', String(gift.id))
-          const card = event.currentTarget.closest('.gift-card')
-          if (card) {
-            const rect = card.getBoundingClientRect()
-            event.dataTransfer.setDragImage(card, 20, rect.height / 2)
-          }
-          onDragStart(gift.id, gift.rating)
-        }}
-        onDragEnd={(event) => {
-          event.stopPropagation()
-          onDragEnd()
-        }}
+        onPointerDown={handlePointerDown}
       >
-        <GripIcon />
-      </span>
-      <div className="gift-card__actions">
-        <button
-          type="button"
-          className="icon-button"
-          aria-label="Edit"
-          title="Edit"
-          onClick={(event) => {
-            event.stopPropagation()
-            setIsEditing(true)
-          }}
-        >
-          <PencilIcon />
-        </button>
-        <button
-          type="button"
-          className="icon-button"
-          aria-label="Delete"
-          title="Delete"
-          onClick={(event) => {
-            event.stopPropagation()
-            if (confirm(`Delete "${gift.title}"?`)) onDelete(gift.id)
-          }}
-        >
-          <TrashIcon />
-        </button>
+        <span className="gift-card__drag-handle">
+          <GripIcon />
+        </span>
+        <span className="gift-card__action-bar-buttons">
+          {onReceivedChange && (
+            <button
+              type="button"
+              className="icon-button"
+              aria-label={gift.received ? 'Move back to wishlist' : 'I got this'}
+              title={gift.received ? 'Move back to wishlist' : 'I got this'}
+              onClick={(event) => {
+                event.stopPropagation()
+                onReceivedChange(gift.id, !gift.received)
+              }}
+            >
+              {gift.received ? <UndoIcon /> : <CheckIcon />}
+            </button>
+          )}
+          <button
+            type="button"
+            className="icon-button"
+            aria-label="Edit"
+            title="Edit"
+            onClick={(event) => {
+              event.stopPropagation()
+              setIsEditing(true)
+            }}
+          >
+            <PencilIcon />
+          </button>
+          <button
+            type="button"
+            className="icon-button"
+            aria-label="Delete"
+            title="Delete"
+            onClick={(event) => {
+              event.stopPropagation()
+              if (confirm(`Delete "${gift.title}"?`)) onDelete(gift.id)
+            }}
+          >
+            <TrashIcon />
+          </button>
+        </span>
       </div>
       {gift.image_url ? (
         <img className="gift-card__img" src={gift.image_url} alt={gift.title} />

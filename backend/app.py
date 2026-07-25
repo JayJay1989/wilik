@@ -10,12 +10,16 @@ from flask_login import (
 
 from sqlalchemy import event
 
-from models import AppSettings, User, db, Gift
+from models import AppSettings, User, db, Gift, generate_share_token
 
 CURRENCY_OPTIONS = ["€", "$", "£", ""]
 DECIMAL_SEPARATOR_OPTIONS = [",", ".", "round"]
 THEME_COLORS = ["#5b5fef", "#d4a017", "#d2601a", "#c026d3"]
 DEFAULT_PASSWORD = "changeme"  # temporary password for new/reset accounts; must_change_password forces a real one
+
+
+def find_user_by_username(username):
+    return User.query.filter(db.func.lower(User.username) == (username or "").lower()).first()
 
 app = Flask(__name__)
 app.config["SECRET_KEY"] = "dev-secret-change-me"  # signs the session cookie
@@ -98,7 +102,7 @@ def update_account():
     new_username = data.get("username", current_user.username).strip()
     if not new_username:
         return jsonify({"error": "Username can't be empty"}), 400
-    if new_username != current_user.username and User.query.filter_by(username=new_username).first():
+    if new_username.lower() != current_user.username.lower() and find_user_by_username(new_username):
         return jsonify({"error": "Username already taken"}), 409
 
     currency = data.get("currency", current_user.currency)
@@ -139,7 +143,7 @@ def first_login_setup():
     new_username = data.get("new_username", current_user.username).strip()
     if not new_username:
         return jsonify({"error": "Username can't be empty"}), 400
-    if new_username != current_user.username and User.query.filter_by(username=new_username).first():
+    if new_username.lower() != current_user.username.lower() and find_user_by_username(new_username):
         return jsonify({"error": "Username already taken"}), 409
 
     new_password = data.get("new_password", "")
@@ -170,7 +174,7 @@ def update_password():
 @app.route("/api/login", methods=["POST"])
 def login():
     data = request.get_json()
-    user = User.query.filter_by(username=data.get("username")).first()
+    user = find_user_by_username(data.get("username"))
     if user is None:
         return jsonify({"error": "Invalid username or password"}), 401
     # new/reset accounts always have DEFAULT_PASSWORD set, so this check runs for
@@ -209,7 +213,7 @@ def create_user():
     if not current_user.is_admin:
         return jsonify({"error": "Admin only"}), 403
     data = request.get_json()
-    if User.query.filter_by(username=data.get("username")).first():
+    if find_user_by_username(data.get("username")):
         return jsonify({"error": "Username already taken"}), 409
     # temporary placeholder password: the user sets their own on first login
     user = User(username=data["username"], is_admin=data.get("is_admin", False), must_change_password=True)
@@ -262,6 +266,18 @@ def update_rating(item_id):
     data = request.get_json()
     gift.rating = data["rating"]
     gift.sort_order = None  # a rating change moves the item to a new group, drop its old manual position
+    db.session.commit()
+    return jsonify(gift.to_dict())
+
+
+@app.route("/api/items/<int:item_id>/received", methods=["PATCH"])
+@login_required
+def update_received(item_id):
+    gift = db.get_or_404(Gift, item_id)
+    if gift.owner_id != current_user.id:
+        return jsonify({"error": "Not your item"}), 403
+    data = request.get_json()
+    gift.received = bool(data.get("received", True))
     db.session.commit()
     return jsonify(gift.to_dict())
 
@@ -326,6 +342,87 @@ def delete_item(item_id):
     db.session.delete(gift)
     db.session.commit()
     return "", 204
+
+
+@app.route("/api/account/share-token", methods=["POST"])
+@login_required
+def regenerate_share_token():
+    current_user.share_token = generate_share_token()
+    db.session.commit()
+    return jsonify(current_user.to_dict())
+
+
+# --- Public, no-login routes: reachable via a user's share link ---
+
+
+@app.route("/api/public/<token>")
+def public_wishlist(token):
+    user = User.query.filter_by(share_token=token).first()
+    if user is None:
+        return jsonify({"error": "Not found"}), 404
+    return jsonify(user.public_dict())
+
+
+@app.route("/api/public/<token>/items")
+def public_items(token):
+    user = User.query.filter_by(share_token=token).first()
+    if user is None:
+        return jsonify({"error": "Not found"}), 404
+    gifts = Gift.query.filter_by(owner_id=user.id, received=False).all()
+    return jsonify([gift.to_dict(include_claim_status=True) for gift in gifts])
+
+
+@app.route("/api/public/<token>/items/<int:item_id>/claim", methods=["POST"])
+def claim_item(token, item_id):
+    user = User.query.filter_by(share_token=token).first()
+    if user is None:
+        return jsonify({"error": "Not found"}), 404
+    gift = db.get_or_404(Gift, item_id)
+    if gift.owner_id != user.id:
+        return jsonify({"error": "Not found"}), 404
+    if gift.claimed_by:
+        return jsonify({"error": "Already claimed"}), 409
+    data = request.get_json()
+    name = data.get("name", "").strip()
+    if not name:
+        return jsonify({"error": "Enter your name"}), 400
+    gift.claimed_by = name
+    db.session.commit()
+    return jsonify(gift.to_dict(include_claim_status=True))
+
+
+@app.route("/api/public/<token>/items/<int:item_id>/unclaim", methods=["POST"])
+def unclaim_item(token, item_id):
+    user = User.query.filter_by(share_token=token).first()
+    if user is None:
+        return jsonify({"error": "Not found"}), 404
+    gift = db.get_or_404(Gift, item_id)
+    if gift.owner_id != user.id:
+        return jsonify({"error": "Not found"}), 404
+    data = request.get_json()
+    name = data.get("name", "").strip()
+    if not gift.claimed_by or gift.claimed_by.lower() != name.lower():
+        return jsonify({"error": "That name doesn't match this claim"}), 403
+    gift.claimed_by = None
+    gift.purchased = False
+    db.session.commit()
+    return jsonify(gift.to_dict(include_claim_status=True))
+
+
+@app.route("/api/public/<token>/items/<int:item_id>/purchased", methods=["POST"])
+def set_purchased(token, item_id):
+    user = User.query.filter_by(share_token=token).first()
+    if user is None:
+        return jsonify({"error": "Not found"}), 404
+    gift = db.get_or_404(Gift, item_id)
+    if gift.owner_id != user.id:
+        return jsonify({"error": "Not found"}), 404
+    if not gift.claimed_by:
+        return jsonify({"error": "Claim it first"}), 400
+    data = request.get_json()
+    gift.purchased = bool(data.get("purchased", True))
+    db.session.commit()
+    return jsonify(gift.to_dict(include_claim_status=True))
 
 
 if __name__ == "__main__":
