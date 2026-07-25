@@ -22,7 +22,6 @@ from models import AppSettings, User, db, Gift, generate_share_token
 CURRENCY_OPTIONS = ["€", "$", "£", ""]
 DECIMAL_SEPARATOR_OPTIONS = [",", ".", "round"]
 THEME_COLORS = ["#5b5fef", "#d4a017", "#d2601a", "#c026d3"]
-DEFAULT_PASSWORD = "changeme"  # temporary password for new/reset accounts; must_change_password forces a real one
 SCRAPE_MAX_BYTES = 5 * 1024 * 1024
 
 
@@ -184,9 +183,9 @@ def first_login_setup():
 @app.route("/api/account/password", methods=["PUT"])
 @login_required
 def update_password():
+    # already logged in, so that's proof enough of identity; no need to also ask
+    # for the current password before replacing it
     data = request.get_json()
-    if not current_user.check_password(data.get("current_password", "")):
-        return jsonify({"error": "Current password is incorrect"}), 401
     new_password = data.get("new_password", "")
     if len(new_password) < 8:
         return jsonify({"error": "New password must be at least 8 characters"}), 400
@@ -201,8 +200,8 @@ def login():
     user = find_user_by_username(data.get("username"))
     if user is None:
         return jsonify({"error": "Invalid username or password"}), 401
-    # new/reset accounts always have DEFAULT_PASSWORD set, so this check runs for
-    # them too; password_hash is only ever None for legacy rows, as a fallback
+    # new/reset accounts have no password_hash yet, so any value logs them in;
+    # must_change_password then forces them to set a real one right away
     if user.password_hash is not None and not user.check_password(data.get("password", "")):
         return jsonify({"error": "Invalid username or password"}), 401
     login_user(user)
@@ -239,9 +238,9 @@ def create_user():
     data = request.get_json()
     if find_user_by_username(data.get("username")):
         return jsonify({"error": "Username already taken"}), 409
-    # temporary placeholder password: the user sets their own on first login
+    # no password yet: a blank password_hash lets them log in with anything, since
+    # must_change_password forces them to set a real one right after
     user = User(username=data["username"], is_admin=data.get("is_admin", False), must_change_password=True)
-    user.set_password(DEFAULT_PASSWORD)
     db.session.add(user)
     db.session.commit()
     return jsonify(user.to_dict()), 201
@@ -268,7 +267,7 @@ def reset_password(user_id):
     if user_id == current_user.id:
         return jsonify({"error": "Use account settings to change your own password"}), 400
     user = db.get_or_404(User, user_id)
-    user.set_password(DEFAULT_PASSWORD)
+    user.password_hash = None
     user.must_change_password = True
     db.session.commit()
     return jsonify(user.to_dict())

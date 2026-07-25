@@ -34,7 +34,6 @@ function SettingsPage({ currentUser, onUpdate }) {
   const [usernameError, setUsernameError] = useState(null)
   const [usernameSaved, setUsernameSaved] = useState(false)
 
-  const [currentPassword, setCurrentPassword] = useState('')
   const [newPassword, setNewPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
   const [passwordError, setPasswordError] = useState(null)
@@ -81,13 +80,12 @@ function SettingsPage({ currentUser, onUpdate }) {
       method: 'PUT',
       credentials: 'include',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ current_password: currentPassword, new_password: newPassword }),
+      body: JSON.stringify({ new_password: newPassword }),
     }).then((response) => {
       if (!response.ok) {
         response.json().then((data) => setPasswordError(data.error))
         return
       }
-      setCurrentPassword('')
       setNewPassword('')
       setConfirmPassword('')
       setPasswordSaved(true)
@@ -218,15 +216,6 @@ function SettingsPage({ currentUser, onUpdate }) {
       </form>
 
       <form className="gift-form" onSubmit={handlePasswordSubmit}>
-        <label>
-          Current password
-          <input
-            type="password"
-            value={currentPassword}
-            onChange={(event) => setCurrentPassword(event.target.value)}
-            required
-          />
-        </label>
         <label>
           New password
           <input
