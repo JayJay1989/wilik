@@ -204,15 +204,13 @@ function SettingsPage({ currentUser, onUpdate }) {
       <form className="gift-form" onSubmit={handleUsernameSubmit}>
         <label>
           Username
-          <span className="inline-field">
-            <input value={username} onChange={(event) => setUsername(event.target.value)} required />
-            <button type="submit" className="btn-primary">
-              Save
-            </button>
-          </span>
+          <input value={username} onChange={(event) => setUsername(event.target.value)} required />
         </label>
         {usernameError && <p className="form-error">{usernameError}</p>}
         {usernameSaved && <p className="form-success">Saved</p>}
+        <div className="gift-form__actions">
+          <button type="submit">Change username</button>
+        </div>
       </form>
 
       <form className="gift-form" onSubmit={handlePasswordSubmit}>

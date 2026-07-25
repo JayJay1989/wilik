@@ -131,7 +131,7 @@ function GiftForm({ initialValues, onSubmit, onCancel }) {
             step="any"
             value={values.price}
             onChange={handleChange}
-            placeholder="0.00"
+            placeholder="0,00"
           />
         </label>
         <label>
