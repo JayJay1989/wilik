@@ -43,16 +43,47 @@ function PublicWishlistPage({ appName }) {
     )
   }
 
+  function claimTokenKey(giftId) {
+    return `wishdrop-claim-${giftId}`
+  }
+
   function handleClaim(gift) {
     const name = prompt("Your name, so others know it's taken:")
     if (!name || !name.trim()) return
-    postAction(gift.id, 'claim', { name: name.trim() }).then(updateItem).catch((error) => alert(error.message))
+    postAction(gift.id, 'claim', { name: name.trim() })
+      .then((updated) => {
+        if (updated.claim_token) {
+          localStorage.setItem(claimTokenKey(gift.id), updated.claim_token)
+        }
+        updateItem(updated)
+      })
+      .catch((error) => alert(error.message))
   }
 
   function handleUnclaim(gift) {
-    const name = prompt('Confirm your name to unclaim this:')
+    const claimToken = localStorage.getItem(claimTokenKey(gift.id))
+    if (claimToken) {
+      postAction(gift.id, 'unclaim', { claim_token: claimToken })
+        .then((updated) => {
+          localStorage.removeItem(claimTokenKey(gift.id))
+          updateItem(updated)
+        })
+        .catch((error) => alert(error.message))
+      return
+    }
+
+    // no token on this device: confirm the name first, but only recognize this
+    // browser as the claimant -- an actual release still needs a second, explicit click
+    const name = prompt('Confirm your name to manage this claim:')
     if (!name || !name.trim()) return
-    postAction(gift.id, 'unclaim', { name: name.trim() }).then(updateItem).catch((error) => alert(error.message))
+    postAction(gift.id, 'verify-claim', { name: name.trim() })
+      .then((data) => {
+        if (data.claim_token) {
+          localStorage.setItem(claimTokenKey(gift.id), data.claim_token)
+        }
+        updateItem({ ...gift, claimed: true })
+      })
+      .catch((error) => alert(error.message))
   }
 
   if (owner === undefined) return null

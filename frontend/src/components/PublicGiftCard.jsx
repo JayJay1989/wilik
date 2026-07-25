@@ -1,6 +1,6 @@
 import StarRating from './StarRating'
 import ImagePlaceholder from './ImagePlaceholder'
-import { GiftIcon, LockIcon, ExternalLinkIcon } from './Icons'
+import { GiftIcon, LockIcon, UndoIcon, ExternalLinkIcon } from './Icons'
 import { formatPrice } from '../formatPrice'
 
 function PublicGiftCard({ gift, currency, decimalSeparator, onClaim, onUnclaim }) {
@@ -10,8 +10,10 @@ function PublicGiftCard({ gift, currency, decimalSeparator, onClaim, onUnclaim }
 
   const classNames = ['gift-card']
   if (gift.url) classNames.push('gift-card--clickable')
+  if (gift.claimed) classNames.push('gift-card--claimed')
 
-  const claimLabel = gift.claimed_by ? `Gift claimed by ${gift.claimed_by} — click to unclaim` : 'Get this gift'
+  const isOwnClaim = Boolean(gift.claimed) && Boolean(localStorage.getItem(`wishdrop-claim-${gift.id}`))
+  const claimLabel = isOwnClaim ? 'Release this gift' : gift.claimed ? 'Gift claimed — click to unclaim' : 'Get this gift'
 
   return (
     <div
@@ -67,17 +69,17 @@ function PublicGiftCard({ gift, currency, decimalSeparator, onClaim, onUnclaim }
       </div>
       <button
         type="button"
-        className={gift.claimed_by ? 'gift-card__claim-rail gift-card__claim-rail--claimed' : 'gift-card__claim-rail'}
+        className={gift.claimed ? 'gift-card__claim-rail gift-card__claim-rail--claimed' : 'gift-card__claim-rail'}
         aria-label={claimLabel}
         title={claimLabel}
         onClick={(event) => {
           event.stopPropagation()
-          if (gift.claimed_by) onUnclaim(gift)
+          if (gift.claimed) onUnclaim(gift)
           else onClaim(gift)
         }}
       >
-        {gift.claimed_by ? <LockIcon /> : <GiftIcon />}
-        {gift.claimed_by ? `Gift claimed by ${gift.claimed_by}` : 'Get this gift'}
+        {isOwnClaim ? <UndoIcon /> : gift.claimed ? <LockIcon /> : <GiftIcon />}
+        {isOwnClaim ? 'Release this gift' : gift.claimed ? 'Gift claimed' : 'Get this gift'}
       </button>
     </div>
   )

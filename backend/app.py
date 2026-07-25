@@ -1,5 +1,6 @@
 import ipaddress
 import json
+import secrets
 import socket
 from urllib.parse import urlparse
 
@@ -576,8 +577,31 @@ def claim_item(token, item_id):
     if not name:
         return jsonify({"error": "Enter your name"}), 400
     gift.claimed_by = name
+    gift.claim_token = secrets.token_urlsafe(24)
     db.session.commit()
-    return jsonify(gift.to_dict(include_claim_status=True))
+    result = gift.to_dict(include_claim_status=True)
+    result["claim_token"] = gift.claim_token  # only ever returned here, to the claimer themselves
+    return jsonify(result)
+
+
+@app.route("/api/public/<token>/items/<int:item_id>/verify-claim", methods=["POST"])
+def verify_claim(token, item_id):
+    """Confirms a name matches an existing claim without releasing it -- lets a
+    visitor on a different device 'reclaim' their own item before deciding to
+    actually unclaim it, instead of that happening in the same step."""
+    user = User.query.filter_by(share_token=token).first()
+    if user is None:
+        return jsonify({"error": "Not found"}), 404
+    gift = db.get_or_404(Gift, item_id)
+    if gift.owner_id != user.id:
+        return jsonify({"error": "Not found"}), 404
+    if not gift.claimed_by:
+        return jsonify({"error": "This item isn't claimed"}), 400
+    data = request.get_json()
+    name = data.get("name", "").strip()
+    if gift.claimed_by.lower() != name.lower():
+        return jsonify({"error": "That name doesn't match this claim"}), 403
+    return jsonify({"claim_token": gift.claim_token})
 
 
 @app.route("/api/public/<token>/items/<int:item_id>/unclaim", methods=["POST"])
@@ -588,11 +612,16 @@ def unclaim_item(token, item_id):
     gift = db.get_or_404(Gift, item_id)
     if gift.owner_id != user.id:
         return jsonify({"error": "Not found"}), 404
+    if not gift.claimed_by:
+        return jsonify({"error": "This item isn't claimed"}), 400
     data = request.get_json()
+    claim_token = data.get("claim_token")
     name = data.get("name", "").strip()
-    if not gift.claimed_by or gift.claimed_by.lower() != name.lower():
+    token_matches = claim_token and gift.claim_token and claim_token == gift.claim_token
+    if not token_matches and gift.claimed_by.lower() != name.lower():
         return jsonify({"error": "That name doesn't match this claim"}), 403
     gift.claimed_by = None
+    gift.claim_token = None
     gift.purchased = False
     db.session.commit()
     return jsonify(gift.to_dict(include_claim_status=True))

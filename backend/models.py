@@ -85,8 +85,12 @@ class Gift(db.Model):
     rating = db.Column(db.Integer, nullable=True, default=None)
     quantity = db.Column(db.Integer, nullable=False, default=1)
     sort_order = db.Column(db.Integer, nullable=True, default=None)
-    # claim/purchase state is only ever shown to public-link visitors, never to the owner (would spoil the surprise)
+    # claim/purchase state is only ever shown to public-link visitors, never to the owner (would spoil the surprise).
+    # claimed_by itself is never sent to any visitor either (see to_dict) -- it only exists server-side, as the
+    # fallback secret a claimer can retype from another device/browser to unclaim without their claim_token
     claimed_by = db.Column(db.String(100), nullable=True)
+    # secret handed to the claimer's own browser so they can unclaim silently, without retyping their name
+    claim_token = db.Column(db.String(64), nullable=True)
     purchased = db.Column(db.Boolean, nullable=False, default=False)
     # owner-controlled "I got this" flag: pulls the item off their own active list into the received archive
     received = db.Column(db.Boolean, nullable=False, default=False)
@@ -108,6 +112,6 @@ class Gift(db.Model):
             "sort_order": self.sort_order,
         }
         if include_claim_status:
-            data["claimed_by"] = self.claimed_by
+            data["claimed"] = bool(self.claimed_by)
             data["purchased"] = self.purchased
         return data
