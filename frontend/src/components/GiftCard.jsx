@@ -19,6 +19,7 @@ function GiftCard({
   onReceivedChange,
   dragState,
   onDragStart,
+  onDragMove,
   onDragEnter,
   onDragEnd,
 }) {
@@ -55,8 +56,10 @@ function GiftCard({
     if (event.target.closest('.gift-card__action-bar-buttons')) return
     event.preventDefault()
     onDragStart(gift.id, gift.rating)
+    onDragMove(event.clientX, event.clientY)
 
     function handlePointerMove(moveEvent) {
+      onDragMove(moveEvent.clientX, moveEvent.clientY)
       const el = document.elementFromPoint(moveEvent.clientX, moveEvent.clientY)
       const card = el && el.closest('.gift-card')
       onDragEnter(card ? Number(card.dataset.giftId) : null)

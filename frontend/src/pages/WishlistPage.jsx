@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import GiftCard from '../components/GiftCard'
 import GiftForm from '../components/GiftForm'
-import { PlusIcon, SparkleIcon } from '../components/Icons'
+import { PlusIcon, SparkleIcon, GripIcon } from '../components/Icons'
 import { sortGifts } from '../sortGifts'
 
 const API_BASE = '/api'
@@ -10,7 +10,13 @@ const API_URL = `${API_BASE}/items`
 function WishlistPage({ currentUser }) {
   const [items, setItems] = useState([])
   const [isAdding, setIsAdding] = useState(false)
-  const [dragState, setDragState] = useState({ draggedId: null, draggedRating: undefined, overId: null })
+  const [dragState, setDragState] = useState({
+    draggedId: null,
+    draggedRating: undefined,
+    overId: null,
+    x: 0,
+    y: 0,
+  })
 
   useEffect(() => {
     fetch(API_URL, { credentials: 'include' })
@@ -115,7 +121,11 @@ function WishlistPage({ currentUser }) {
   }
 
   function handleDragStart(id, rating) {
-    setDragState({ draggedId: id, draggedRating: rating, overId: null })
+    setDragState((current) => ({ ...current, draggedId: id, draggedRating: rating, overId: null }))
+  }
+
+  function handleDragMove(x, y) {
+    setDragState((current) => ({ ...current, x, y }))
   }
 
   function handleDragEnter(id) {
@@ -123,8 +133,10 @@ function WishlistPage({ currentUser }) {
   }
 
   function handleDragEnd() {
-    setDragState({ draggedId: null, draggedRating: undefined, overId: null })
+    setDragState({ draggedId: null, draggedRating: undefined, overId: null, x: 0, y: 0 })
   }
+
+  const draggedItem = dragState.draggedId != null ? items.find((item) => item.id === dragState.draggedId) : null
 
   const activeItems = items.filter((item) => !item.received)
 
@@ -173,12 +185,22 @@ function WishlistPage({ currentUser }) {
               onReceivedChange={handleReceivedChange}
               dragState={dragState}
               onDragStart={handleDragStart}
+              onDragMove={handleDragMove}
               onDragEnter={handleDragEnter}
               onDragEnd={handleDragEnd}
             />
           ))}
         </div>
       </main>
+      {draggedItem && (
+        <div
+          className="gift-card__drag-ghost"
+          style={{ left: dragState.x, top: dragState.y }}
+        >
+          <GripIcon />
+          <span className="gift-card__drag-ghost-title">{draggedItem.title}</span>
+        </div>
+      )}
     </>
   )
 }

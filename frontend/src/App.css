@@ -211,6 +211,31 @@
   filter: grayscale(1);
 }
 
+.gift-card__drag-ghost {
+  position: fixed;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  max-width: 220px;
+  padding: 10px 14px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--bg);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+  color: var(--text-h);
+  font-size: 0.9rem;
+  font-weight: 600;
+  pointer-events: none;
+  transform: translate(-24px, -50%) rotate(-2deg);
+}
+
+.gift-card__drag-ghost-title {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
 .gift-card--claimed::after {
   content: '';
   position: absolute;
