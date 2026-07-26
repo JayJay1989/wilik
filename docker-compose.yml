@@ -25,7 +25,10 @@ services:
       - "com.centurylabs.watchtower.enable=true"
 
   watchtower:
-    image: containrrr/watchtower
+    # containrrr/watchtower is unmaintained (archived Dec 2025) and fails against
+    # newer Docker Engine API versions ("client version 1.25 is too old"). This is
+    # a drop-in, actively maintained fork with the same config/behavior.
+    image: nickfedor/watchtower
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
     environment:
