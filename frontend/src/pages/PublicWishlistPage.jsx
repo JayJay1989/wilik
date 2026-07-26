@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { useParams } from 'react-router-dom'
+import { useParams, Link } from 'react-router-dom'
 import Logo from '../components/Logo'
 import PublicGiftCard from '../components/PublicGiftCard'
 import { GiftIcon, SparkleIcon } from '../components/Icons'
@@ -12,6 +12,7 @@ function PublicWishlistPage({ appName }) {
   const { token } = useParams()
   const [owner, setOwner] = useState(undefined) // undefined = loading, null = invalid link
   const [items, setItems] = useState([])
+  const [isLoggedIn, setIsLoggedIn] = useState(false)
 
   useEffect(() => {
     fetch(`${API_BASE}/public/${token}`)
@@ -21,6 +22,10 @@ function PublicWishlistPage({ appName }) {
       .then((response) => (response.ok ? response.json() : []))
       .then(setItems)
   }, [token])
+
+  useEffect(() => {
+    fetch(`${API_BASE}/me`, { credentials: 'include' }).then((response) => setIsLoggedIn(response.ok))
+  }, [])
 
   useEffect(() => {
     document.title = owner ? owner.list_name : appName
@@ -93,10 +98,15 @@ function PublicWishlistPage({ appName }) {
       <div className="app">
         <nav className="topbar">
           <div className="topbar__left">
-            <span className="topbar__brand">
+            <Link to="/" className="topbar__brand">
               <Logo size={64} />
               <span>{appName}</span>
-            </span>
+            </Link>
+          </div>
+          <div className="topbar__actions">
+            <Link to={isLoggedIn ? '/wishlist/browse' : '/directory'}>
+              <GiftIcon /> All wishlists
+            </Link>
           </div>
         </nav>
         <main>
@@ -116,10 +126,15 @@ function PublicWishlistPage({ appName }) {
     <div className="app" style={themeStyle(owner.theme_color)}>
       <nav className="topbar">
         <div className="topbar__left">
-          <span className="topbar__brand">
+          <Link to="/" className="topbar__brand">
             <Logo size={64} />
             <span>{appName}</span>
-          </span>
+          </Link>
+        </div>
+        <div className="topbar__actions">
+          <Link to={isLoggedIn ? '/wishlist/browse' : '/directory'}>
+            <GiftIcon /> All wishlists
+          </Link>
         </div>
       </nav>
       <p className="page__hint" style={{ maxWidth: 700, margin: '0 auto 16px' }}>

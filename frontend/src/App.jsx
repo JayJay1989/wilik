@@ -3,12 +3,15 @@ import { Routes, Route, Navigate, Link } from 'react-router-dom'
 import Login from './components/Login'
 import FirstLoginSetup from './components/FirstLoginSetup'
 import Logo from './components/Logo'
-import { SettingsIcon, KeyIcon, LogoutIcon, UserIcon, ArchiveIcon, MenuIcon, CloseIcon } from './components/Icons'
+import { SettingsIcon, KeyIcon, LogoutIcon, UserIcon, ArchiveIcon, MenuIcon, CloseIcon, GiftIcon } from './components/Icons'
 import WishlistPage from './pages/WishlistPage'
 import ReceivedPage from './pages/ReceivedPage'
 import SettingsPage from './pages/SettingsPage'
 import AdminPage from './pages/AdminPage'
 import PublicWishlistPage from './pages/PublicWishlistPage'
+import GiftDirectoryPage from './pages/GiftDirectoryPage'
+import WishlistChooserPage from './pages/WishlistChooserPage'
+import WishlistBrowsePage from './pages/WishlistBrowsePage'
 import { themeStyle } from './themePresets'
 import './App.css'
 
@@ -58,6 +61,9 @@ function AuthenticatedApp({ appName, onAppNameChange }) {
           {menuOpen ? <CloseIcon /> : <MenuIcon />}
         </button>
         <div className={menuOpen ? 'topbar__actions topbar__actions--open' : 'topbar__actions'}>
+          <Link to="/wishlist" onClick={() => setMenuOpen(false)}>
+            <GiftIcon /> Wishlists
+          </Link>
           <Link to="/received" onClick={() => setMenuOpen(false)}>
             <ArchiveIcon /> Received
           </Link>
@@ -82,6 +88,8 @@ function AuthenticatedApp({ appName, onAppNameChange }) {
       </nav>
       <Routes>
         <Route path="/" element={<WishlistPage currentUser={currentUser} />} />
+        <Route path="/wishlist" element={<WishlistChooserPage />} />
+        <Route path="/wishlist/browse" element={<WishlistBrowsePage />} />
         <Route path="/received" element={<ReceivedPage currentUser={currentUser} />} />
         <Route path="/settings" element={<SettingsPage currentUser={currentUser} onUpdate={setCurrentUser} />} />
         <Route
@@ -115,6 +123,7 @@ function App() {
   return (
     <Routes>
       <Route path="/list/:token" element={<PublicWishlistPage appName={appName} />} />
+      <Route path="/directory" element={<GiftDirectoryPage appName={appName} />} />
       <Route path="/*" element={<AuthenticatedApp appName={appName} onAppNameChange={setAppName} />} />
     </Routes>
   )

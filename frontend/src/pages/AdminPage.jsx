@@ -17,11 +17,19 @@ function AdminPage({ currentUser, appName, onAppNameChange }) {
   const [editUsername, setEditUsername] = useState('')
   const [editListName, setEditListName] = useState('')
   const [editError, setEditError] = useState(null)
+  const [publicDirectoryEnabled, setPublicDirectoryEnabled] = useState(true)
+  const [directoryError, setDirectoryError] = useState(null)
 
   useEffect(() => {
     fetch(`${API_BASE}/users`, { credentials: 'include' })
       .then((response) => response.json())
       .then(setUsers)
+  }, [])
+
+  useEffect(() => {
+    fetch(`${API_BASE}/settings`)
+      .then((response) => response.json())
+      .then((data) => setPublicDirectoryEnabled(data.public_directory_enabled))
   }, [])
 
   function handleAppNameSubmit(event) {
@@ -38,6 +46,21 @@ function AdminPage({ currentUser, appName, onAppNameChange }) {
         return
       }
       response.json().then((data) => onAppNameChange(data.app_name))
+    })
+  }
+
+  function handleDirectorySubmit(event) {
+    event.preventDefault()
+    setDirectoryError(null)
+    fetch(`${API_BASE}/settings`, {
+      method: 'PUT',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ public_directory_enabled: publicDirectoryEnabled }),
+    }).then((response) => {
+      if (!response.ok) {
+        response.json().then((data) => setDirectoryError(data.error))
+      }
     })
   }
 
@@ -124,6 +147,25 @@ function AdminPage({ currentUser, appName, onAppNameChange }) {
         {appNameError && <p className="form-error">{appNameError}</p>}
         <div className="gift-form__actions">
           <button type="submit">Change app name</button>
+        </div>
+      </form>
+
+      <h3>Gift directory</h3>
+      <form className="gift-form" onSubmit={handleDirectorySubmit}>
+        <label className="user-admin__checkbox">
+          <input
+            type="checkbox"
+            checked={publicDirectoryEnabled}
+            onChange={(event) => setPublicDirectoryEnabled(event.target.checked)}
+          />
+          Show a list of everyone's wishlist on the login page
+        </label>
+        <p className="page__hint">
+          Anyone who reaches the login page can see and open every wishlist, without needing its share link
+        </p>
+        {directoryError && <p className="form-error">{directoryError}</p>}
+        <div className="gift-form__actions">
+          <button type="submit">Save</button>
         </div>
       </form>
 

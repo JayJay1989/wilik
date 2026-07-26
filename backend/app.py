@@ -113,12 +113,35 @@ def update_settings():
         return jsonify({"error": "Admin only"}), 403
     settings = AppSettings.query.get(1)
     data = request.get_json()
-    app_name = data.get("app_name", "").strip()
-    if not app_name:
-        return jsonify({"error": "App name can't be empty"}), 400
-    settings.app_name = app_name
+    if "app_name" in data:
+        app_name = data.get("app_name", "").strip()
+        if not app_name:
+            return jsonify({"error": "App name can't be empty"}), 400
+        settings.app_name = app_name
+    if "public_directory_enabled" in data:
+        settings.public_directory_enabled = bool(data["public_directory_enabled"])
     db.session.commit()
     return jsonify(settings.to_dict())
+
+
+@app.route("/api/public/directory")
+def public_directory():
+    # lets visitors find a wishlist without needing its share link -- admin-toggleable
+    # since it also means every list becomes discoverable to anyone who reaches this page
+    settings = AppSettings.query.get(1)
+    if not settings.public_directory_enabled:
+        return jsonify({"enabled": False, "lists": []})
+    users = User.query.order_by(User.list_name).all()
+    lists = [
+        {
+            "list_name": user.list_name or f"{user.username}'s wishlist",
+            "username": user.username,
+            "share_token": user.share_token,
+            "theme_color": user.theme_color,
+        }
+        for user in users
+    ]
+    return jsonify({"enabled": True, "lists": lists})
 
 
 @app.route("/api/account", methods=["PUT"])
