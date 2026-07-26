@@ -69,7 +69,7 @@ class User(UserMixin, db.Model):
 
 class AppSettings(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    app_name = db.Column(db.String(80), nullable=False, default="Wishdrop")
+    app_name = db.Column(db.String(80), nullable=False, default="Wilik")
     # shows a directory of every wishlist on the login page, so visitors can find one without a share link
     public_directory_enabled = db.Column(db.Boolean, nullable=False, default=True)
 

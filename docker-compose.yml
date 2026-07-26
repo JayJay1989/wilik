@@ -4,7 +4,7 @@ services:
     environment:
       SECRET_KEY: ${SECRET_KEY:?set SECRET_KEY in .env}
     volumes:
-      - wishdrop-data:/app/instance
+      - wilik-data:/app/instance
     restart: unless-stopped
 
   frontend:
@@ -16,4 +16,4 @@ services:
     restart: unless-stopped
 
 volumes:
-  wishdrop-data:
+  wilik-data:

@@ -1,5 +1,5 @@
 {
-  "name": "wishdrop",
+  "name": "wilik",
   "private": true,
   "scripts": {
     "dev:backend": "cd backend && venv\\Scripts\\python.exe app.py",

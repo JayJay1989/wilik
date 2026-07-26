@@ -49,7 +49,7 @@ function PublicWishlistPage({ appName }) {
   }
 
   function claimTokenKey(giftId) {
-    return `wishdrop-claim-${giftId}`
+    return `wilik-claim-${giftId}`
   }
 
   function handleClaim(gift) {

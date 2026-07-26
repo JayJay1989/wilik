@@ -1,4 +1,4 @@
-const STORAGE_KEY = 'wishdrop-color-scheme'
+const STORAGE_KEY = 'wilik-color-scheme'
 
 // 'dark' is the default -- light is opt-in, 'auto' follows the OS preference
 export function getColorScheme() {

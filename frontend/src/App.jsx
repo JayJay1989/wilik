@@ -108,7 +108,7 @@ function AuthenticatedApp({ appName, onAppNameChange }) {
 }
 
 function App() {
-  const [appName, setAppName] = useState('Wishdrop')
+  const [appName, setAppName] = useState('Wilik')
 
   useEffect(() => {
     fetch(`${API_BASE}/settings`)

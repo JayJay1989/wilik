@@ -12,7 +12,7 @@ function PublicGiftCard({ gift, currency, decimalSeparator, onClaim, onUnclaim }
   if (gift.url) classNames.push('gift-card--clickable')
   if (gift.claimed) classNames.push('gift-card--claimed')
 
-  const isOwnClaim = Boolean(gift.claimed) && Boolean(localStorage.getItem(`wishdrop-claim-${gift.id}`))
+  const isOwnClaim = Boolean(gift.claimed) && Boolean(localStorage.getItem(`wilik-claim-${gift.id}`))
   const claimLabel = isOwnClaim ? 'Release this gift' : gift.claimed ? 'Gift claimed — click to unclaim' : 'Get this gift'
 
   return (

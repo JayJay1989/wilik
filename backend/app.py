@@ -50,7 +50,7 @@ def is_safe_scrape_url(url):
 app = Flask(__name__)
 # signs the session cookie -- override via env in any real deployment
 app.config["SECRET_KEY"] = os.environ.get("SECRET_KEY", "dev-secret-change-me")
-app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///wishdrop.db"
+app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///wilik.db"
 
 # allows the React app (different port) to send/receive the session cookie
 CORS(app, supports_credentials=True, origins=["http://localhost:5173"])
@@ -96,7 +96,7 @@ with app.app_context():
 
     # Bootstrap: the single AppSettings row (id=1) that holds the app name
     if AppSettings.query.count() == 0:
-        db.session.add(AppSettings(id=1, app_name="Wishdrop"))
+        db.session.add(AppSettings(id=1, app_name="Wilik"))
         db.session.commit()
 
 
@@ -351,7 +351,7 @@ def scrape_url():
         response = requests.get(
             url,
             timeout=5,
-            headers={"User-Agent": "Mozilla/5.0 (compatible; WishdropBot/1.0)"},
+            headers={"User-Agent": "Mozilla/5.0 (compatible; WilikBot/1.0)"},
             stream=True,
         )
         response.raise_for_status()
