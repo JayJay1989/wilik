@@ -86,7 +86,24 @@ function PublicWishlistPage({ appName }) {
         if (data.claim_token) {
           localStorage.setItem(claimTokenKey(gift.id), data.claim_token)
         }
-        updateItem({ ...gift, claimed: true })
+        updateItem({ ...gift })
+      })
+      .catch((error) => alert(error.message))
+  }
+
+  // used at quantity > 1 (or unlimited) via the "manage your claim" link: recognizes an
+  // existing claim by name without creating or deleting anything, so a visitor who
+  // already claimed a copy on another device can find their way back to "Release this
+  // gift" instead of accidentally claiming an extra, separate copy
+  function handleManageClaim(gift) {
+    const name = prompt('Confirm your name to manage your claim:')
+    if (!name || !name.trim()) return
+    postAction(gift.id, 'verify-claim', { name: name.trim() })
+      .then((data) => {
+        if (data.claim_token) {
+          localStorage.setItem(claimTokenKey(gift.id), data.claim_token)
+        }
+        updateItem({ ...gift })
       })
       .catch((error) => alert(error.message))
   }
@@ -139,7 +156,8 @@ function PublicWishlistPage({ appName }) {
       </nav>
       <p className="page__hint" style={{ maxWidth: 700, margin: '0 auto 16px' }}>
         Claim an item by clicking <span className="page__hint-highlight">Get this gift</span> so others know it's
-        taken. The recipient won't be notified.
+        taken. The recipient won't be notified. Items that allow more than one, or unlimited, copies can be claimed
+        independently by several people.
       </p>
       <div className="wishlist-toolbar">
         <h2>{owner.list_name}</h2>
@@ -161,6 +179,7 @@ function PublicWishlistPage({ appName }) {
               decimalSeparator={owner.decimal_separator}
               onClaim={handleClaim}
               onUnclaim={handleUnclaim}
+              onManageClaim={handleManageClaim}
             />
           ))}
         </div>

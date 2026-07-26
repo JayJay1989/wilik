@@ -18,6 +18,7 @@ function GiftForm({ initialValues, defaultCurrency, onSubmit, onCancel }) {
     currency: initialValues?.currency ?? '__default__',
     quantity: initialValues?.quantity ?? 1,
   })
+  const [unlimited, setUnlimited] = useState(initialValues ? initialValues.quantity == null : false)
   const [rating, setRating] = useState(initialValues?.rating ?? null)
   const [scraping, setScraping] = useState(false)
   const [scrapeError, setScrapeError] = useState(null)
@@ -65,7 +66,7 @@ function GiftForm({ initialValues, defaultCurrency, onSubmit, onCancel }) {
       ...values,
       price: values.price === '' ? null : Number(values.price),
       currency: values.currency === '__default__' ? null : values.currency,
-      quantity: Number(values.quantity) || 1,
+      quantity: unlimited ? null : Number(values.quantity) || 1,
       rating,
     })
   }
@@ -163,9 +164,20 @@ function GiftForm({ initialValues, defaultCurrency, onSubmit, onCancel }) {
         </label>
         <label>
           Quantity
-          <input name="quantity" type="number" min="1" value={values.quantity} onChange={handleChange} />
+          <input
+            name="quantity"
+            type="number"
+            min="1"
+            value={unlimited ? '' : values.quantity}
+            onChange={handleChange}
+            disabled={unlimited}
+          />
         </label>
       </div>
+      <label className="user-admin__checkbox">
+        <input type="checkbox" checked={unlimited} onChange={(event) => setUnlimited(event.target.checked)} />
+        Unlimited (anyone can claim a copy, it never runs out)
+      </label>
       <label>
         Rating
         <StarRating value={rating} onChange={setRating} />

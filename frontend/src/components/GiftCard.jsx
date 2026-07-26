@@ -108,6 +108,23 @@ function GiftCard({
               title={gift.received ? 'Move back to wishlist' : 'Received'}
               onClick={(event) => {
                 event.stopPropagation()
+                if (gift.quantity == null && !gift.received) {
+                  // unlimited items never "run out" -- marking one received shouldn't
+                  // archive the whole item away, just clear whatever's been claimed so
+                  // far; ask first (with a count) since this isn't the usual behavior
+                  fetch(`${API_BASE}/items/${gift.id}/claim-info`, { credentials: 'include' })
+                    .then((response) => response.json())
+                    .then((data) => {
+                      const count = data.claimed_by.length
+                      const proceed = confirm(
+                        count > 0
+                          ? `This item has unlimited quantity, so marking it received won't remove it from your list. It'll just clear the ${count} existing claim${count === 1 ? '' : 's'} so people can keep gifting it. Continue?`
+                          : `This item has unlimited quantity, so marking it received won't remove it from your list. Continue?`
+                      )
+                      if (proceed) onReceivedChange(gift.id, true)
+                    })
+                  return
+                }
                 onReceivedChange(gift.id, !gift.received)
               }}
             >
@@ -136,16 +153,16 @@ function GiftCard({
               fetch(`${API_BASE}/items/${gift.id}/claim-info`, { credentials: 'include' })
                 .then((response) => response.json())
                 .then((data) => {
-                  if (!data.claimed_by) {
+                  if (data.claimed_by.length === 0) {
                     if (confirm(`Delete "${gift.title}"?`)) onDelete(gift.id)
                     return
                   }
                   const proceed = confirm(
-                    `"${gift.title}" has already been claimed by someone. (If you received this gift already, use the checkmark instead to archive it to your Received list.) Delete anyway?`
+                    `"${gift.title}" has already been claimed by ${data.claimed_by.length} ${data.claimed_by.length === 1 ? 'person' : 'people'}. (If you received this gift already, use the checkmark instead to archive it to your Received list.) Delete anyway?`
                   )
                   if (!proceed) return
                   onDelete(gift.id)
-                  alert(`Deleted. It had been claimed by ${data.claimed_by}.`)
+                  alert(`Deleted. It had been claimed by: ${data.claimed_by.join(', ')}.`)
                 })
             }}
           >

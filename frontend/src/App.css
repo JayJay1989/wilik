@@ -236,7 +236,7 @@
   text-overflow: ellipsis;
 }
 
-.gift-card--claimed::after {
+.gift-card--fully-claimed::after {
   content: '';
   position: absolute;
   inset: 0;
@@ -520,6 +520,37 @@
   color: var(--accent);
 }
 
+.gift-card__claim-rail:disabled {
+  cursor: default;
+}
+
+.gift-card__claim-rail--claimed:disabled:hover {
+  /* no room left to claim -- suppress the interactive highlight used by the
+     clickable quantity=1 "claimed" state so this reads as a dead end, not a button */
+  background: var(--border);
+  color: var(--text-h);
+}
+
+.gift-card-wrapper {
+  display: flex;
+  flex-direction: column;
+}
+
+.gift-card__manage-claim {
+  align-self: center;
+  margin-top: 6px;
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--accent);
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.gift-card__manage-claim:hover {
+  text-decoration: underline;
+}
+
 button {
   display: inline-flex;
   align-items: center;
@@ -645,6 +676,14 @@ button:hover {
 .gift-form select {
   height: 38px;
   box-sizing: border-box;
+}
+
+.gift-form input:disabled,
+.gift-form textarea:disabled,
+.gift-form select:disabled {
+  background: var(--border);
+  color: var(--text);
+  cursor: not-allowed;
 }
 
 .gift-form__row {

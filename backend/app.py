@@ -20,7 +20,7 @@ from flask_migrate import Migrate
 
 from sqlalchemy import event
 
-from models import AppSettings, User, db, Gift, generate_share_token
+from models import AppSettings, User, db, Gift, Claim, generate_share_token
 
 CURRENCY_OPTIONS = ["€", "$", "£", ""]
 DECIMAL_SEPARATOR_OPTIONS = [",", ".", "round"]
@@ -510,7 +510,18 @@ def update_received(item_id):
     if gift.owner_id != current_user.id:
         return jsonify({"error": "Not your item"}), 403
     data = request.get_json()
-    gift.received = bool(data.get("received", True))
+    new_received = bool(data.get("received", True))
+
+    # unlimited items never "run out" -- receiving one round doesn't mean the owner is
+    # done wanting more, so keep it on the active list and just clear existing claims
+    # instead of archiving it away like a normal (finite-quantity) item
+    if gift.quantity is None and new_received:
+        for claim in list(gift.claims):
+            db.session.delete(claim)
+        db.session.commit()
+        return jsonify(gift.to_dict())
+
+    gift.received = new_received
     db.session.commit()
     return jsonify(gift.to_dict())
 
@@ -596,7 +607,7 @@ def item_claim_info(item_id):
     gift = db.get_or_404(Gift, item_id)
     if gift.owner_id != current_user.id:
         return jsonify({"error": "Not your item"}), 403
-    return jsonify({"claimed_by": gift.claimed_by})
+    return jsonify({"claimed_by": [claim.claimed_by for claim in gift.claims]})
 
 
 @app.route("/api/account/share-token", methods=["POST"])
@@ -635,17 +646,23 @@ def claim_item(token, item_id):
     gift = db.get_or_404(Gift, item_id)
     if gift.owner_id != user.id:
         return jsonify({"error": "Not found"}), 404
-    if gift.claimed_by:
-        return jsonify({"error": "Already claimed"}), 409
     data = request.get_json()
     name = data.get("name", "").strip()
     if not name:
         return jsonify({"error": "Enter your name"}), 400
-    gift.claimed_by = name
-    gift.claim_token = secrets.token_urlsafe(24)
+
+    # always creates a new, independent claim -- never tries to recognize an existing
+    # name and reuse it, so a typo while trying to *release* a claim (see verify_claim)
+    # can never silently create an unwanted extra claim instead
+    claimed_count = len(gift.claims)
+    if gift.quantity is not None and claimed_count >= gift.quantity:
+        return jsonify({"error": "Already claimed"}), 409
+
+    claim = Claim(gift_id=gift.id, claimed_by=name, claim_token=secrets.token_urlsafe(24))
+    db.session.add(claim)
     db.session.commit()
     result = gift.to_dict(include_claim_status=True)
-    result["claim_token"] = gift.claim_token  # only ever returned here, to the claimer themselves
+    result["claim_token"] = claim.claim_token  # only ever returned here, to the claimer themselves
     return jsonify(result)
 
 
@@ -660,13 +677,14 @@ def verify_claim(token, item_id):
     gift = db.get_or_404(Gift, item_id)
     if gift.owner_id != user.id:
         return jsonify({"error": "Not found"}), 404
-    if not gift.claimed_by:
-        return jsonify({"error": "This item isn't claimed"}), 400
     data = request.get_json()
     name = data.get("name", "").strip()
-    if gift.claimed_by.lower() != name.lower():
+    claim = Claim.query.filter(
+        Claim.gift_id == gift.id, db.func.lower(Claim.claimed_by) == name.lower()
+    ).first()
+    if claim is None:
         return jsonify({"error": "That name doesn't match this claim"}), 403
-    return jsonify({"claim_token": gift.claim_token})
+    return jsonify({"claim_token": claim.claim_token})
 
 
 @app.route("/api/public/<token>/items/<int:item_id>/unclaim", methods=["POST"])
@@ -677,17 +695,21 @@ def unclaim_item(token, item_id):
     gift = db.get_or_404(Gift, item_id)
     if gift.owner_id != user.id:
         return jsonify({"error": "Not found"}), 404
-    if not gift.claimed_by:
-        return jsonify({"error": "This item isn't claimed"}), 400
     data = request.get_json()
     claim_token = data.get("claim_token")
     name = data.get("name", "").strip()
-    token_matches = claim_token and gift.claim_token and claim_token == gift.claim_token
-    if not token_matches and gift.claimed_by.lower() != name.lower():
+
+    claim = None
+    if claim_token:
+        claim = Claim.query.filter_by(gift_id=gift.id, claim_token=claim_token).first()
+    if claim is None and name:
+        claim = Claim.query.filter(
+            Claim.gift_id == gift.id, db.func.lower(Claim.claimed_by) == name.lower()
+        ).first()
+    if claim is None:
         return jsonify({"error": "That name doesn't match this claim"}), 403
-    gift.claimed_by = None
-    gift.claim_token = None
-    gift.purchased = False
+
+    db.session.delete(claim)
     db.session.commit()
     return jsonify(gift.to_dict(include_claim_status=True))
 
@@ -700,10 +722,11 @@ def set_purchased(token, item_id):
     gift = db.get_or_404(Gift, item_id)
     if gift.owner_id != user.id:
         return jsonify({"error": "Not found"}), 404
-    if not gift.claimed_by:
-        return jsonify({"error": "Claim it first"}), 400
     data = request.get_json()
-    gift.purchased = bool(data.get("purchased", True))
+    claim = Claim.query.filter_by(gift_id=gift.id, claim_token=data.get("claim_token")).first()
+    if claim is None:
+        return jsonify({"error": "Claim it first"}), 400
+    claim.purchased = bool(data.get("purchased", True))
     db.session.commit()
     return jsonify(gift.to_dict(include_claim_status=True))
 

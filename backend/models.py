@@ -90,17 +90,18 @@ class Gift(db.Model):
     price = db.Column(db.Float, nullable=True)
     currency = db.Column(db.String(4), nullable=True)  # null = use the owner's account default currency
     rating = db.Column(db.Integer, nullable=True, default=None)
-    quantity = db.Column(db.Integer, nullable=False, default=1)
+    # null = unlimited/infinite simultaneous claims. No column-level default: a Python-side
+    # default fires on INSERT whenever the value is None, which would silently turn an
+    # explicit "unlimited" (quantity=None) into quantity=1 on creation. create_item already
+    # defaults to 1 itself when the key is absent from the request.
+    quantity = db.Column(db.Integer, nullable=True)
     sort_order = db.Column(db.Integer, nullable=True, default=None)
-    # claim/purchase state is only ever shown to public-link visitors, never to the owner (would spoil the surprise).
-    # claimed_by itself is never sent to any visitor either (see to_dict) -- it only exists server-side, as the
-    # fallback secret a claimer can retype from another device/browser to unclaim without their claim_token
-    claimed_by = db.Column(db.String(100), nullable=True)
-    # secret handed to the claimer's own browser so they can unclaim silently, without retyping their name
-    claim_token = db.Column(db.String(64), nullable=True)
-    purchased = db.Column(db.Boolean, nullable=False, default=False)
     # owner-controlled "I got this" flag: pulls the item off their own active list into the received archive
     received = db.Column(db.Boolean, nullable=False, default=False)
+
+    # one row per visitor who has claimed a "copy" of this gift; claim/purchase state is only ever
+    # shown to public-link visitors, never to the owner (would spoil the surprise) -- see to_dict
+    claims = db.relationship("Claim", backref="gift", cascade="all, delete-orphan", lazy="selectin")
 
     def to_dict(self, include_claim_status=False):
         data = {
@@ -120,6 +121,19 @@ class Gift(db.Model):
             "sort_order": self.sort_order,
         }
         if include_claim_status:
-            data["claimed"] = bool(self.claimed_by)
-            data["purchased"] = self.purchased
+            claimed_count = len(self.claims)
+            data["claimed_count"] = claimed_count
+            data["fully_claimed"] = self.quantity is not None and claimed_count >= self.quantity
         return data
+
+
+class Claim(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    gift_id = db.Column(db.Integer, db.ForeignKey("gift.id"), nullable=False)
+    # never sent to any visitor (public or owner-browsing) -- only exists so a claimer can re-prove
+    # their claim from another device (verify-claim) and so the owner can see it in the pre-delete
+    # claim-info check (see item_claim_info)
+    claimed_by = db.Column(db.String(100), nullable=False)
+    # secret handed to the claimer's own browser so they can unclaim silently, without retyping their name
+    claim_token = db.Column(db.String(64), nullable=False, unique=True)
+    purchased = db.Column(db.Boolean, nullable=False, default=False)
