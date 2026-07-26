@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="frontend/public/favicon-readme.svg" width="60" alt="Wilik logo">
+  <img src="frontend/public/favicon-readme.svg" width="80" alt="Wilik logo">
 </p>
 
 # Wilik

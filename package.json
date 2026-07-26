@@ -1,6 +1,13 @@
 {
   "name": "wilik",
+  "description": "A self-hosted wishlist app",
+  "version": "1.0.0",
   "private": true,
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/joostvanopdorp/wilik"
+  },
   "scripts": {
     "dev:backend": "cd backend && venv\\Scripts\\python.exe app.py",
     "dev:frontend": "cd frontend && npm run dev",
