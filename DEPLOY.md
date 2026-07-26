@@ -50,7 +50,7 @@ Setup:
    BACKUP_S3_SECRET_ACCESS_KEY=your-secret-access-key
    ```
    The default `BACKUP_S3_ENDPOINT` (`s3.amazonaws.com`) only works for some AWS regions. If your bucket is in e.g. `eu-west-1`, set `BACKUP_S3_ENDPOINT=s3.eu-west-1.amazonaws.com` instead (AWS returns a `PermanentRedirect` error otherwise). Non-AWS providers should set their own S3 endpoint here too.
-3. Optionally set `BACKUP_NOTIFICATION_URL` to get notified if a backup fails, e.g. for [ntfy](https://ntfy.sh): `ntfy://ntfy.sh/your-topic-name` (or `ntfy://user:pass@your-host/topic` if self-hosted). Any [shoutrrr](https://containrrr.dev/shoutrrr/) service works the same way.
+3. Optionally set `BACKUP_NOTIFICATION_URL` to get notified if a backup fails, e.g. for [ntfy](https://ntfy.sh): `ntfy://ntfy.sh/your-topic-name?title=Wilik` (or `ntfy://user:pass@your-host/topic?title=Wilik` if self-hosted; add `?title=Wilik` to tell it apart from notifications for other apps). Any [shoutrrr](https://containrrr.dev/shoutrrr/) service works the same way.
 4. Start it with the `backup` profile enabled:
    ```
    docker compose --profile backup up -d
