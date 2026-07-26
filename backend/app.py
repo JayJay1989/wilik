@@ -519,6 +519,9 @@ def update_received(item_id):
 @login_required
 def create_item():
     data = request.get_json()
+    currency = data.get("currency")
+    if currency is not None and currency not in CURRENCY_OPTIONS:
+        return jsonify({"error": "Invalid currency"}), 400
     gift = Gift(
         owner_id=current_user.id,
         title=data["title"],
@@ -529,6 +532,7 @@ def create_item():
         image_url=data.get("image_url"),
         description=data.get("description"),
         price=data.get("price"),
+        currency=currency,
         quantity=data.get("quantity", 1),
         rating=data.get("rating"),
     )
@@ -552,6 +556,13 @@ def update_item(item_id):
     gift.image_url = data.get("image_url", gift.image_url)
     gift.description = data.get("description", gift.description)
     gift.price = data.get("price", gift.price)
+
+    if "currency" in data:
+        new_currency = data["currency"]
+        if new_currency is not None and new_currency not in CURRENCY_OPTIONS:
+            return jsonify({"error": "Invalid currency"}), 400
+        gift.currency = new_currency
+
     gift.quantity = data.get("quantity", gift.quantity)
 
     new_rating = data.get("rating", gift.rating)

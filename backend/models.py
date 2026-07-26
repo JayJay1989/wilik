@@ -88,6 +88,7 @@ class Gift(db.Model):
     image_url = db.Column(db.String(500), nullable=True)
     description = db.Column(db.Text, nullable=True)
     price = db.Column(db.Float, nullable=True)
+    currency = db.Column(db.String(4), nullable=True)  # null = use the owner's account default currency
     rating = db.Column(db.Integer, nullable=True, default=None)
     quantity = db.Column(db.Integer, nullable=False, default=1)
     sort_order = db.Column(db.Integer, nullable=True, default=None)
@@ -112,6 +113,7 @@ class Gift(db.Model):
             "image_url": self.image_url,
             "description": self.description,
             "price": self.price,
+            "currency": self.currency,
             "rating": self.rating,
             "received": self.received,
             "quantity": self.quantity,

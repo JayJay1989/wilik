@@ -160,7 +160,13 @@ function WishlistPage({ currentUser }) {
       </div>
       <main>
         <div className="gift-grid">
-          {isAdding && <GiftForm onSubmit={handleCreate} onCancel={() => setIsAdding(false)} />}
+          {isAdding && (
+            <GiftForm
+              defaultCurrency={currentUser.currency}
+              onSubmit={handleCreate}
+              onCancel={() => setIsAdding(false)}
+            />
+          )}
           {!isAdding && activeItems.length === 0 && (
             <div className="empty-state">
               <SparkleIcon />

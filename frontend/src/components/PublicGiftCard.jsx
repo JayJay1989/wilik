@@ -61,7 +61,7 @@ function PublicGiftCard({ gift, currency, decimalSeparator, onClaim, onUnclaim }
         {(gift.price != null || gift.rating != null) && (
           <div className="gift-card__footer">
             {gift.price != null && (
-              <span className="gift-price">{formatPrice(gift.price, currency, decimalSeparator)}</span>
+              <span className="gift-price">{formatPrice(gift.price, gift.currency ?? currency, decimalSeparator)}</span>
             )}
             {gift.rating != null && <StarRating value={gift.rating} onChange={() => {}} readOnly />}
           </div>

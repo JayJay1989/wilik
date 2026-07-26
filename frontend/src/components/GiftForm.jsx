@@ -3,7 +3,9 @@ import StarRating from './StarRating'
 
 const API_BASE = '/api'
 
-function GiftForm({ initialValues, onSubmit, onCancel }) {
+const CURRENCY_OPTIONS = ['€', '$', '£', '']
+
+function GiftForm({ initialValues, defaultCurrency, onSubmit, onCancel }) {
   const [values, setValues] = useState({
     title: initialValues?.title ?? '',
     label: initialValues?.label ?? '',
@@ -13,6 +15,7 @@ function GiftForm({ initialValues, onSubmit, onCancel }) {
     image_url: initialValues?.image_url ?? '',
     description: initialValues?.description ?? '',
     price: initialValues?.price ?? '',
+    currency: initialValues?.currency ?? '__default__',
     quantity: initialValues?.quantity ?? 1,
   })
   const [rating, setRating] = useState(initialValues?.rating ?? null)
@@ -61,6 +64,7 @@ function GiftForm({ initialValues, onSubmit, onCancel }) {
     onSubmit({
       ...values,
       price: values.price === '' ? null : Number(values.price),
+      currency: values.currency === '__default__' ? null : values.currency,
       quantity: Number(values.quantity) || 1,
       rating,
     })
@@ -146,6 +150,16 @@ function GiftForm({ initialValues, onSubmit, onCancel }) {
             onChange={handleChange}
             placeholder="0,00"
           />
+        </label>
+        <label>
+          Currency
+          <select name="currency" value={values.currency} onChange={handleChange}>
+            <option value="__default__">Default ({defaultCurrency || 'no symbol'})</option>
+            <option value="€">€ Euro</option>
+            <option value="$">$ Dollar</option>
+            <option value="£">£ Pound</option>
+            <option value="">No currency</option>
+          </select>
         </label>
         <label>
           Quantity

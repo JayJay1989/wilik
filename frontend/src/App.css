@@ -641,6 +641,12 @@ button:hover {
   color: var(--text-h);
 }
 
+.gift-form input,
+.gift-form select {
+  height: 38px;
+  box-sizing: border-box;
+}
+
 .gift-form__row {
   display: flex;
   gap: 8px;
