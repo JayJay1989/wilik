@@ -6,6 +6,12 @@
 
 A self-hosted wishlist app. Each user keeps a list of things they want, shares it via a link that works for anyone who has it (or opts into the browsable directory so people can find it without one), and visitors can claim items or mark them as purchased without needing an account.
 
+<p align="center">
+  <img src="docs/screenshots/screenshot_login.png" width="230" alt="Login screen">
+  <img src="docs/screenshots/screenshot_wishlist_edit.png" width="230" alt="Wishlist, owner view">
+  <img src="docs/screenshots/screenshot_wishlist_claim.png" width="230" alt="Wishlist, shared link view">
+</p>
+
 ## What it does
 
 - 📝 **Personal wishlists** with price, brand, and notes per item. Paste a product URL and it'll try to auto-fill title, image, and price.
