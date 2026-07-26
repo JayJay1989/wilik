@@ -1,18 +1,35 @@
 services:
   backend:
     build: ./backend
+    image: ghcr.io/joostvanopdorp/wilik-backend:latest
     environment:
       SECRET_KEY: ${SECRET_KEY:?set SECRET_KEY in .env}
     volumes:
       - wilik-data:/app/instance
     restart: unless-stopped
+    labels:
+      - "com.centurylabs.watchtower.enable=true"
 
   frontend:
     build: ./frontend
+    image: ghcr.io/joostvanopdorp/wilik-frontend:latest
     ports:
       - "8090:80"
     depends_on:
       - backend
+    restart: unless-stopped
+    labels:
+      - "com.centurylabs.watchtower.enable=true"
+
+  watchtower:
+    image: containrrr/watchtower
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    environment:
+      WATCHTOWER_CLEANUP: "true"
+      WATCHTOWER_LABEL_ENABLE: "true"
+      WATCHTOWER_POLL_INTERVAL: "300"
+      # WATCHTOWER_NOTIFICATION_URL: "" # optional: shoutrrr URL (Slack/email/etc) to get notified on auto-update
     restart: unless-stopped
 
 volumes:

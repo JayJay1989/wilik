@@ -16,6 +16,7 @@ from flask_login import (
     login_user,
     logout_user,
 )
+from flask_migrate import Migrate
 
 from sqlalchemy import event
 
@@ -56,6 +57,7 @@ app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///wilik.db"
 CORS(app, supports_credentials=True, origins=["http://localhost:5173"])
 
 db.init_app(app)
+migrate = Migrate(app, db)
 
 login_manager = LoginManager()
 login_manager.init_app(app)
@@ -81,23 +83,25 @@ with app.app_context():
         cursor.execute("PRAGMA busy_timeout=5000")
         cursor.close()
 
-    db.create_all()
 
-    # Bootstrap: create the first admin account if the database is empty
-    if User.query.count() == 0:
-        admin = User(username="Admin", is_admin=True, list_name="My wishlist", must_change_password=True)
-        admin.set_password("admin")
-        db.session.add(admin)
-        db.session.commit()
-        print("=" * 50)
-        print("Created first admin account: username='Admin' password='admin'")
-        print("You'll be asked to choose your own username and password on first login.")
-        print("=" * 50)
+@app.cli.command("bootstrap-db")
+def bootstrap_db():
+    """Creates the first admin account and the AppSettings row if missing.
+    Run after 'flask db upgrade' -- assumes the schema already exists."""
+    with app.app_context():
+        if User.query.count() == 0:
+            admin = User(username="Admin", is_admin=True, list_name="My wishlist", must_change_password=True)
+            admin.set_password("admin")
+            db.session.add(admin)
+            db.session.commit()
+            print("=" * 50)
+            print("Created first admin account: username='Admin' password='admin'")
+            print("You'll be asked to choose your own username and password on first login.")
+            print("=" * 50)
 
-    # Bootstrap: the single AppSettings row (id=1) that holds the app name
-    if AppSettings.query.count() == 0:
-        db.session.add(AppSettings(id=1, app_name="Wilik"))
-        db.session.commit()
+        if AppSettings.query.count() == 0:
+            db.session.add(AppSettings(id=1, app_name="Wilik"))
+            db.session.commit()
 
 
 @app.route("/api/settings")
