@@ -32,19 +32,5 @@ services:
       # WATCHTOWER_NOTIFICATION_URL: "" # optional: shoutrrr URL (Slack/email/etc) to get notified on auto-update
     restart: unless-stopped
 
-  backup:
-    build: ./backup
-    volumes:
-      - wilik-data:/source:ro
-      - wilik-backup-staging:/staging
-      - ./rclone.conf:/config/rclone/rclone.conf:ro
-    environment:
-      RCLONE_REMOTE: ${RCLONE_REMOTE:?set RCLONE_REMOTE in .env, e.g. mydropbox:wilik-backup}
-      BACKUP_RETENTION_DAYS: "30"
-      BACKUP_INTERVAL_HOURS: "24"
-      NOTIFY_WEBHOOK_URL: ${NOTIFY_WEBHOOK_URL:-}
-    restart: unless-stopped
-
 volumes:
   wilik-data:
-  wilik-backup-staging:
