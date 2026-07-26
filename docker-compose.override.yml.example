@@ -1,0 +1,22 @@
+# Example: routing Wilik through a Traefik reverse proxy on an external
+# Docker network, instead of publishing port 8090 directly on the host.
+#
+# Copy this to docker-compose.override.yml (already gitignored -- it's
+# meant to hold your own environment-specific setup, not the app itself)
+# and adjust the hostname. Compose picks it up automatically alongside
+# docker-compose.yml, no extra flags needed.
+
+services:
+  frontend:
+    networks:
+      - default
+      - traefik-net
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.wilik.rule=Host(`wilik.example.com`)"
+      - "traefik.http.services.wilik.loadbalancer.server.port=80"
+
+networks:
+  default:
+  traefik-net:
+    external: true
