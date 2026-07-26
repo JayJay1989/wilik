@@ -56,7 +56,7 @@ function AdminPage({ currentUser, appName, onAppNameChange }) {
       }
       response.json().then((newUser) => {
         setUsers((current) => [...current, newUser])
-        setCreateMessage(`${newUser.username} can log in with any password — they'll be asked to set a real one right away.`)
+        setCreateMessage(`${newUser.username} will be asked to set a password the first time they log in.`)
         setUsername('')
         setIsAdmin(false)
       })
@@ -78,7 +78,7 @@ function AdminPage({ currentUser, appName, onAppNameChange }) {
         if (!response.ok) return
         response.json().then((updatedUser) => {
           setUsers((current) => current.map((u) => (u.id === updatedUser.id ? updatedUser : u)))
-          setResetMessage(`${user.username} can now log in with any password — they'll be asked to set a real one right away.`)
+          setResetMessage(`${user.username} will be asked to set a new password next time they log in.`)
         })
       }
     )

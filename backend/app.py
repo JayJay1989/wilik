@@ -197,15 +197,27 @@ def update_password():
     return "", 204
 
 
+@app.route("/api/login/lookup", methods=["POST"])
+def login_lookup():
+    # lets the login form ask for a username first, then show the right next
+    # step: a password field, or straight to account setup if none is set yet
+    data = request.get_json()
+    user = find_user_by_username(data.get("username"))
+    if user is None:
+        return jsonify({"error": "User not found"}), 404
+    return jsonify({"needs_password_setup": user.password_hash is None or user.must_change_password})
+
+
 @app.route("/api/login", methods=["POST"])
 def login():
     data = request.get_json()
     user = find_user_by_username(data.get("username"))
     if user is None:
         return jsonify({"error": "Invalid username or password"}), 401
-    # new/reset accounts have no password_hash yet, so any value logs them in;
-    # must_change_password then forces them to set a real one right away
-    if user.password_hash is not None and not user.check_password(data.get("password", "")):
+    # new/reset accounts (or older ones still pending a forced change) skip
+    # password verification entirely -- must_change_password forces a real one right after
+    needs_setup = user.password_hash is None or user.must_change_password
+    if not needs_setup and not user.check_password(data.get("password", "")):
         return jsonify({"error": "Invalid username or password"}), 401
     login_user(user)
     return jsonify(user.to_dict())

@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import Logo from './Logo'
+import { SpinnerIcon } from './Icons'
 
 const API_BASE = '/api'
 
@@ -8,6 +9,7 @@ function FirstLoginSetup({ appName, currentUser, onUpdate }) {
   const [newPassword, setNewPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
   const [error, setError] = useState(null)
+  const [busy, setBusy] = useState(false)
 
   function handleSubmit(event) {
     event.preventDefault()
@@ -16,6 +18,7 @@ function FirstLoginSetup({ appName, currentUser, onUpdate }) {
       setError("New passwords don't match")
       return
     }
+    setBusy(true)
     fetch(`${API_BASE}/account/first-login`, {
       method: 'PUT',
       credentials: 'include',
@@ -26,11 +29,17 @@ function FirstLoginSetup({ appName, currentUser, onUpdate }) {
       }),
     }).then((response) => {
       if (!response.ok) {
+        setBusy(false)
         response.json().then((data) => setError(data.error))
         return
       }
       response.json().then(onUpdate)
     })
+  }
+
+  function handleLogout() {
+    setBusy(true)
+    fetch(`${API_BASE}/logout`, { method: 'POST', credentials: 'include' }).then(() => onUpdate(null))
   }
 
   return (
@@ -66,8 +75,17 @@ function FirstLoginSetup({ appName, currentUser, onUpdate }) {
           />
         </label>
         {error && <p className="form-error">{error}</p>}
-        <button type="submit" className="btn-primary">
-          Save and continue
+        <button type="submit" className="btn-primary" disabled={busy}>
+          {busy ? (
+            <>
+              <SpinnerIcon /> Saving…
+            </>
+          ) : (
+            'Save and continue'
+          )}
+        </button>
+        <button type="button" className="login-form__back" onClick={handleLogout} disabled={busy}>
+          Not you? Log out
         </button>
       </form>
     </div>
