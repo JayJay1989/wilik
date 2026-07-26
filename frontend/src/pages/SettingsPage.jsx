@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { THEME_PRESETS } from '../themePresets'
+import { getColorScheme, setColorScheme } from '../colorScheme'
 
 const API_BASE = '/api'
 
@@ -8,7 +9,14 @@ function SettingsPage({ currentUser, onUpdate }) {
   const [shareCopied, setShareCopied] = useState(false)
   const [shareRegenerating, setShareRegenerating] = useState(false)
   const [showInDirectory, setShowInDirectory] = useState(currentUser.show_in_directory)
+  const [colorScheme, setColorSchemeState] = useState(getColorScheme)
   const shareUrl = `${window.location.origin}/list/${currentUser.share_token}`
+
+  function handleColorSchemeChange(event) {
+    const value = event.target.value
+    setColorSchemeState(value)
+    setColorScheme(value)
+  }
 
   function handleCopyShareUrl() {
     navigator.clipboard.writeText(shareUrl).then(() => {
@@ -258,6 +266,18 @@ function SettingsPage({ currentUser, onUpdate }) {
           <button type="submit">Change password</button>
         </div>
       </form>
+
+      <h2>Appearance</h2>
+      <div className="gift-form">
+        <label>
+          Color scheme
+          <select value={colorScheme} onChange={handleColorSchemeChange}>
+            <option value="dark">Dark</option>
+            <option value="light">Light</option>
+            <option value="auto">Match system</option>
+          </select>
+        </label>
+      </div>
     </div>
   )
 }
