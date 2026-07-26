@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import StarRating from './StarRating'
 
 const API_BASE = '/api'
@@ -18,6 +18,11 @@ function GiftForm({ initialValues, onSubmit, onCancel }) {
   const [rating, setRating] = useState(initialValues?.rating ?? null)
   const [scraping, setScraping] = useState(false)
   const [scrapeError, setScrapeError] = useState(null)
+  const [imagePreviewError, setImagePreviewError] = useState(false)
+
+  useEffect(() => {
+    setImagePreviewError(false)
+  }, [values.image_url])
 
   function handleChange(event) {
     const { name, value } = event.target
@@ -82,6 +87,14 @@ function GiftForm({ initialValues, onSubmit, onCancel }) {
         Image URL
         <input name="image_url" value={values.image_url} onChange={handleChange} placeholder="https://..." />
       </label>
+      {values.image_url && !imagePreviewError && (
+        <img
+          src={values.image_url}
+          alt="Preview"
+          className="gift-form__image-preview"
+          onError={() => setImagePreviewError(true)}
+        />
+      )}
       <div className="gift-form__row">
         <label>
           Label

@@ -595,6 +595,15 @@ button:hover {
   color: #dc2626;
 }
 
+.gift-form__image-preview {
+  width: clamp(96px, 30vw, 132px);
+  height: clamp(96px, 30vw, 132px);
+  object-fit: cover;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: #fff;
+}
+
 .gift-form input,
 .gift-form textarea,
 .gift-form select {
@@ -614,6 +623,7 @@ button:hover {
 
 .gift-form__row label {
   flex: 1;
+  min-width: 0;
 }
 
 .gift-form__actions {
