@@ -870,10 +870,13 @@ button:hover {
   color: var(--text-h);
 }
 
-.gift-form .user-admin__checkbox {
+label.user-admin__checkbox {
+  display: flex;
   flex-direction: row;
   align-items: center;
   gap: 6px;
+  font-size: 13px;
+  color: var(--text);
 }
 
 .theme-swatches {

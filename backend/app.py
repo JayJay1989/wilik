@@ -131,7 +131,7 @@ def public_directory():
     settings = AppSettings.query.get(1)
     if not settings.public_directory_enabled:
         return jsonify({"enabled": False, "lists": []})
-    users = User.query.order_by(User.list_name).all()
+    users = User.query.filter_by(show_in_directory=True).order_by(User.list_name).all()
     lists = [
         {
             "list_name": user.list_name or f"{user.username}'s wishlist",
@@ -175,6 +175,7 @@ def update_account():
     current_user.show_image_placeholder = data.get(
         "show_image_placeholder", current_user.show_image_placeholder
     )
+    current_user.show_in_directory = data.get("show_in_directory", current_user.show_in_directory)
     db.session.commit()
     return jsonify(current_user.to_dict())
 
@@ -331,6 +332,7 @@ def update_user(user_id):
 
     user.username = new_username
     user.list_name = new_list_name
+    user.show_in_directory = data.get("show_in_directory", user.show_in_directory)
     db.session.commit()
     return jsonify(user.to_dict())
 

@@ -16,6 +16,7 @@ function AdminPage({ currentUser, appName, onAppNameChange }) {
   const [editingUserId, setEditingUserId] = useState(null)
   const [editUsername, setEditUsername] = useState('')
   const [editListName, setEditListName] = useState('')
+  const [editShowInDirectory, setEditShowInDirectory] = useState(true)
   const [editError, setEditError] = useState(null)
   const [publicDirectoryEnabled, setPublicDirectoryEnabled] = useState(true)
   const [directoryError, setDirectoryError] = useState(null)
@@ -111,6 +112,7 @@ function AdminPage({ currentUser, appName, onAppNameChange }) {
     setEditingUserId(user.id)
     setEditUsername(user.username)
     setEditListName(user.list_name)
+    setEditShowInDirectory(user.show_in_directory)
     setEditError(null)
   }
 
@@ -121,7 +123,11 @@ function AdminPage({ currentUser, appName, onAppNameChange }) {
       method: 'PUT',
       credentials: 'include',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ username: editUsername, list_name: editListName }),
+      body: JSON.stringify({
+        username: editUsername,
+        list_name: editListName,
+        show_in_directory: editShowInDirectory,
+      }),
     }).then((response) => {
       if (!response.ok) {
         response.json().then((data) => setEditError(data.error))
@@ -158,11 +164,8 @@ function AdminPage({ currentUser, appName, onAppNameChange }) {
             checked={publicDirectoryEnabled}
             onChange={(event) => setPublicDirectoryEnabled(event.target.checked)}
           />
-          Show a list of everyone's wishlist on the login page
+          Show a directory of public wishlists on the login page
         </label>
-        <p className="page__hint">
-          Anyone who reaches the login page can see and open every wishlist, without needing its share link
-        </p>
         {directoryError && <p className="form-error">{directoryError}</p>}
         <div className="gift-form__actions">
           <button type="submit">Save</button>
@@ -232,6 +235,14 @@ function AdminPage({ currentUser, appName, onAppNameChange }) {
                       onChange={(event) => setEditListName(event.target.value)}
                       required
                     />
+                  </label>
+                  <label className="user-admin__checkbox">
+                    <input
+                      type="checkbox"
+                      checked={editShowInDirectory}
+                      onChange={(event) => setEditShowInDirectory(event.target.checked)}
+                    />
+                    List this wishlist in the browsable directory
                   </label>
                   {editError && <p className="form-error">{editError}</p>}
                   <div className="gift-form__actions">

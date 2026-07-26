@@ -7,6 +7,7 @@ const API_BASE = '/api'
 function SettingsPage({ currentUser, onUpdate }) {
   const [shareCopied, setShareCopied] = useState(false)
   const [shareRegenerating, setShareRegenerating] = useState(false)
+  const [showInDirectory, setShowInDirectory] = useState(currentUser.show_in_directory)
   const shareUrl = `${window.location.origin}/list/${currentUser.share_token}`
 
   function handleCopyShareUrl() {
@@ -28,6 +29,19 @@ function SettingsPage({ currentUser, onUpdate }) {
         onUpdate(updatedUser)
         setShareRegenerating(false)
       })
+  }
+
+  function handleShowInDirectoryChange(event) {
+    const checked = event.target.checked
+    setShowInDirectory(checked)
+    fetch(`${API_BASE}/account`, {
+      method: 'PUT',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ show_in_directory: checked }),
+    })
+      .then((response) => response.json())
+      .then(onUpdate)
   }
 
   const [username, setUsername] = useState(currentUser.username)
@@ -141,6 +155,10 @@ function SettingsPage({ currentUser, onUpdate }) {
             Generate new link
           </button>
         </div>
+        <label className="user-admin__checkbox" style={{ marginTop: 12 }}>
+          <input type="checkbox" checked={showInDirectory} onChange={handleShowInDirectoryChange} />
+          List my wishlist in the browsable directory
+        </label>
       </div>
 
       <h2>Wishlist settings</h2>

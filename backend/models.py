@@ -28,6 +28,9 @@ class User(UserMixin, db.Model):
     show_image_placeholder = db.Column(db.Boolean, nullable=False, default=True)
     # unguessable token for the public, no-login wishlist link; anyone with it can view + claim items
     share_token = db.Column(db.String(64), unique=True, nullable=False, default=generate_share_token)
+    # opt-out of the public directory (see AppSettings.public_directory_enabled) -- the
+    # share link still works either way, this only controls the browsable listing
+    show_in_directory = db.Column(db.Boolean, nullable=False, default=True)
 
     gifts = db.relationship("Gift", backref="owner", cascade="all, delete-orphan")
 
@@ -52,6 +55,7 @@ class User(UserMixin, db.Model):
             "has_password": self.password_hash is not None,
             "show_image_placeholder": self.show_image_placeholder,
             "share_token": self.share_token,
+            "show_in_directory": self.show_in_directory,
         }
 
     def public_dict(self):
