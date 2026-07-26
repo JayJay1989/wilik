@@ -156,8 +156,7 @@ function PublicWishlistPage({ appName }) {
       </nav>
       <p className="page__hint" style={{ maxWidth: 700, margin: '0 auto 16px' }}>
         Claim an item by clicking <span className="page__hint-highlight">Get this gift</span> so others know it's
-        taken. The recipient won't be notified. Items that allow more than one, or unlimited, copies can be claimed
-        independently by several people.
+        taken. The recipient won't be notified.
       </p>
       <div className="wishlist-toolbar">
         <h2>{owner.list_name}</h2>
