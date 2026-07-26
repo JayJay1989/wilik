@@ -163,6 +163,19 @@
   transition: box-shadow 0.2s, opacity 0.15s, filter 0.15s;
 }
 
+.gift-card--pattern {
+  /* muted terrazzo texture: irregular polygon "chips", tiled via an inline SVG.
+     Neutral gray rather than a theme variable (an SVG data-URI can't read CSS
+     custom properties), kept faint enough to read as subtle in both themes.
+     The claim rail and owner-side action bar both paint their own opaque
+     background on top, so this never shows through those zones. Opt-out via
+     the "Show background pattern" account setting (see SettingsPage). */
+  background:
+    url("data:image/svg+xml,%3Csvg%20xmlns='http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg'%20width='440'%20height='220'%3E%3Cpolygon%20points='19.7,30.7%208.0,26.6%2012.2,11.5%2028.8,18.2'%20fill='%23888888'%20fill-opacity='0.048'%2F%3E%3Cpolygon%20points='76.5,19.8%2066.3,18.1%2064.1,3.0%2077.2,8.6'%20fill='%23888888'%20fill-opacity='0.036'%2F%3E%3Cpolygon%20points='148.0,28.8%20137.1,30.1%20126.2,11.7%20148.6,8.6'%20fill='%23888888'%20fill-opacity='0.078'%2F%3E%3Cpolygon%20points='188.7,47.9%20189.2,39.9%20203.4,41.9%20198.6,54.1'%20fill='%23888888'%20fill-opacity='0.060'%2F%3E%3Cpolygon%20points='26.7,77.8%2025.0,66.3%2042.8,60.3%2040.1,77.3'%20fill='%23888888'%20fill-opacity='0.054'%2F%3E%3Cpolygon%20points='108.8,80.3%2089.8,76.3%2088.9,52.4%20115.7,62.4'%20fill='%23888888'%20fill-opacity='0.078'%2F%3E%3Cpolygon%20points='158.2,90.9%20158.2,80.2%20173.6,78.6%20170.7,92.4'%20fill='%23888888'%20fill-opacity='0.072'%2F%3E%3Cpolygon%20points='16.3,109.1%2022.4,120.3%2015.1,129.3%206.7,120.3'%20fill='%23888888'%20fill-opacity='0.030'%2F%3E%3Cpolygon%20points='84.1,135.4%2068.3,132.6%2067.5,112.6%2085.0,119.2'%20fill='%23888888'%20fill-opacity='0.036'%2F%3E%3Cpolygon%20points='152.1,137.3%20146.1,147.6%20128.8,145.5%20140.2,131.9'%20fill='%23888888'%20fill-opacity='0.054'%2F%3E%3Cpolygon%20points='188.7,168.4%20178.4,153.7%20189.7,142.1%20203.3,159.7'%20fill='%23888888'%20fill-opacity='0.036'%2F%3E%3Cpolygon%20points='44.8,170.9%2051.2,179.3%2043.2,189.7%2035.6,176.6'%20fill='%23888888'%20fill-opacity='0.078'%2F%3E%3Cpolygon%20points='99.5,200.6%20104.8,188.6%20118.0,191.2%20111.6,203.0'%20fill='%23888888'%20fill-opacity='0.048'%2F%3E%3Cpolygon%20points='183.2,206.2%20172.8,206.0%20178.7,194.1%20186.8,198.4'%20fill='%23888888'%20fill-opacity='0.030'%2F%3E%3Cpolygon%20points='235.7,12.6%20246.8,18.0%20240.9,32.5%20225.2,23.9'%20fill='%23888888'%20fill-opacity='0.048'%2F%3E%3Cpolygon%20points='298.6,7.2%20296.6,17.3%20281.4,19.0%20287.5,6.1'%20fill='%23888888'%20fill-opacity='0.036'%2F%3E%3Cpolygon%20points='372.0,21.1%20364.7,29.4%20344.3,23.0%20358.9,5.7'%20fill='%23888888'%20fill-opacity='0.078'%2F%3E%3Cpolygon%20points='416.1,39.5%20423.0,43.5%20414.8,55.3%20406.1,45.5'%20fill='%23888888'%20fill-opacity='0.060'%2F%3E%3Cpolygon%20points='262.1,76.0%20251.1,79.7%20242.1,63.2%20259.3,62.9'%20fill='%23888888'%20fill-opacity='0.054'%2F%3E%3Cpolygon%20points='327.9,54.8%20333.5,73.4%20313.0,85.7%20308.9,57.4'%20fill='%23888888'%20fill-opacity='0.078'%2F%3E%3Cpolygon%20points='393.8,87.2%20385.8,94.3%20374.4,83.8%20386.7,76.8'%20fill='%23888888'%20fill-opacity='0.072'%2F%3E%3Cpolygon%20points='245.2,116.0%20237.9,126.5%20226.6,124.1%20230.8,112.5'%20fill='%23888888'%20fill-opacity='0.030'%2F%3E%3Cpolygon%20points='296.0,138.0%20285.3,126.1%20297.0,109.8%20306.7,125.8'%20fill='%23888888'%20fill-opacity='0.036'%2F%3E%3Cpolygon%20points='355.2,149.1%20354.3,137.3%20369.7,129.1%20368.1,146.8'%20fill='%23888888'%20fill-opacity='0.054'%2F%3E%3Cpolygon%20points='422.3,153.8%20411.1,167.8%20396.8,160.1%20409.9,142.2'%20fill='%23888888'%20fill-opacity='0.036'%2F%3E%3Cpolygon%20points='271.3,182.4%20261.5,186.3%20253.7,175.8%20268.3,172.0'%20fill='%23888888'%20fill-opacity='0.078'%2F%3E%3Cpolygon%20points='337.5,191.2%20332.1,203.1%20318.9,200.4%20325.4,188.7'%20fill='%23888888'%20fill-opacity='0.048'%2F%3E%3Cpolygon%20points='394.6,200.6%20400.8,192.2%20407.1,203.9%20398.9,208.0'%20fill='%23888888'%20fill-opacity='0.030'%2F%3E%3C%2Fsvg%3E"),
+    var(--bg);
+  background-size: 440px 220px;
+}
+
 .gift-card__drag-handle {
   display: flex;
   align-items: center;
@@ -492,7 +505,9 @@
   align-items: center;
   justify-content: center;
   gap: 8px;
-  background: var(--accent-bg);
+  /* opaque, not var(--accent-bg): the card's terrazzo texture sits behind this rail,
+     and a translucent background would let it bleed through */
+  background: color-mix(in srgb, var(--accent) 15%, var(--bg));
   color: var(--accent);
   cursor: pointer;
   font-size: 14px;
@@ -684,6 +699,17 @@ button:hover {
   background: var(--border);
   color: var(--text);
   cursor: not-allowed;
+}
+
+.gift-form input[type='checkbox'] {
+  /* the text-input rules above (height, padding, border) aren't meant for
+     checkboxes -- without this they inflate to a 38px-tall invisible box,
+     making checkbox rows look oddly spaced out */
+  height: auto;
+  width: auto;
+  padding: 0;
+  border: none;
+  background: none;
 }
 
 .gift-form__row {

@@ -3,7 +3,7 @@ import ImagePlaceholder from './ImagePlaceholder'
 import { GiftIcon, LockIcon, UndoIcon, ExternalLinkIcon } from './Icons'
 import { formatPrice } from '../formatPrice'
 
-function PublicGiftCard({ gift, currency, decimalSeparator, onClaim, onUnclaim, onManageClaim }) {
+function PublicGiftCard({ gift, currency, decimalSeparator, showBackgroundPattern, onClaim, onUnclaim, onManageClaim }) {
   const lastSpace = gift.title.lastIndexOf(' ')
   const titleHead = lastSpace === -1 ? '' : gift.title.slice(0, lastSpace + 1)
   const titleTail = lastSpace === -1 ? gift.title : gift.title.slice(lastSpace + 1)
@@ -15,6 +15,7 @@ function PublicGiftCard({ gift, currency, decimalSeparator, onClaim, onUnclaim, 
   const classNames = ['gift-card']
   if (gift.url) classNames.push('gift-card--clickable')
   if (fullyClaimed) classNames.push('gift-card--fully-claimed')
+  if (showBackgroundPattern) classNames.push('gift-card--pattern')
 
   // "Claim" and "release a claim by name" are two deliberately distinct actions (even at
   // quantity=1, where the single button already does both depending on state) so that a

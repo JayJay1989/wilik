@@ -26,6 +26,7 @@ class User(UserMixin, db.Model):
     theme_color = db.Column(db.String(7), nullable=True)  # hex code, e.g. "#0d9488"; null = default theme
     must_change_password = db.Column(db.Boolean, nullable=False, default=False)
     show_image_placeholder = db.Column(db.Boolean, nullable=False, default=True)
+    show_background_pattern = db.Column(db.Boolean, nullable=False, default=True)
     # unguessable token for the public, no-login wishlist link; anyone with it can view + claim items
     share_token = db.Column(db.String(64), unique=True, nullable=False, default=generate_share_token)
     # opt-out of the public directory (see AppSettings.public_directory_enabled) -- the
@@ -54,6 +55,7 @@ class User(UserMixin, db.Model):
             "must_change_password": self.must_change_password,
             "has_password": self.password_hash is not None,
             "show_image_placeholder": self.show_image_placeholder,
+            "show_background_pattern": self.show_background_pattern,
             "share_token": self.share_token,
             "show_in_directory": self.show_in_directory,
         }
@@ -64,6 +66,7 @@ class User(UserMixin, db.Model):
             "currency": self.currency,
             "decimal_separator": self.decimal_separator,
             "theme_color": self.theme_color,
+            "show_background_pattern": self.show_background_pattern,
         }
 
 

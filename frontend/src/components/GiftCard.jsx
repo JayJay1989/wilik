@@ -12,6 +12,7 @@ function GiftCard({
   currency,
   decimalSeparator,
   showImagePlaceholder,
+  showBackgroundPattern,
   onRatingChange,
   onUpdate,
   onDelete,
@@ -52,6 +53,7 @@ function GiftCard({
   if (gift.url) classNames.push('gift-card--clickable')
   if (isDragOver) classNames.push('gift-card--drag-over')
   if (isDragActive && !isDragging && !isValidTarget) classNames.push('gift-card--drag-invalid')
+  if (showBackgroundPattern) classNames.push('gift-card--pattern')
 
   function handlePointerDown(event) {
     if (event.target.closest('.gift-card__action-bar-buttons')) return

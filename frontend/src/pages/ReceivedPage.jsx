@@ -78,6 +78,7 @@ function ReceivedPage({ currentUser }) {
               currency={currentUser.currency}
               decimalSeparator={currentUser.decimal_separator}
               showImagePlaceholder={currentUser.show_image_placeholder}
+              showBackgroundPattern={currentUser.show_background_pattern}
               onRatingChange={() => {}}
               onUpdate={handleUpdate}
               onDelete={handleDelete}

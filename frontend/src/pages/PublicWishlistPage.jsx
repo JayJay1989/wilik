@@ -176,6 +176,7 @@ function PublicWishlistPage({ appName }) {
               gift={item}
               currency={owner.currency}
               decimalSeparator={owner.decimal_separator}
+              showBackgroundPattern={owner.show_background_pattern}
               onClaim={handleClaim}
               onUnclaim={handleUnclaim}
               onManageClaim={handleManageClaim}

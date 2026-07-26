@@ -179,6 +179,9 @@ def update_account():
     current_user.show_image_placeholder = data.get(
         "show_image_placeholder", current_user.show_image_placeholder
     )
+    current_user.show_background_pattern = data.get(
+        "show_background_pattern", current_user.show_background_pattern
+    )
     current_user.show_in_directory = data.get("show_in_directory", current_user.show_in_directory)
     db.session.commit()
     return jsonify(current_user.to_dict())

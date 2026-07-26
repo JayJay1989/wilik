@@ -66,6 +66,7 @@ function SettingsPage({ currentUser, onUpdate }) {
   const [decimalSeparator, setDecimalSeparator] = useState(currentUser.decimal_separator)
   const [themeColor, setThemeColor] = useState(currentUser.theme_color)
   const [showImagePlaceholder, setShowImagePlaceholder] = useState(currentUser.show_image_placeholder)
+  const [showBackgroundPattern, setShowBackgroundPattern] = useState(currentUser.show_background_pattern)
   const [wishlistError, setWishlistError] = useState(null)
   const [wishlistSaved, setWishlistSaved] = useState(false)
 
@@ -128,6 +129,7 @@ function SettingsPage({ currentUser, onUpdate }) {
         decimal_separator: decimalSeparator,
         theme_color: themeColor,
         show_image_placeholder: showImagePlaceholder,
+        show_background_pattern: showBackgroundPattern,
       }),
     }).then((response) => {
       if (!response.ok) {
@@ -217,6 +219,14 @@ function SettingsPage({ currentUser, onUpdate }) {
             onChange={(event) => setShowImagePlaceholder(event.target.checked)}
           />
           Show a placeholder image for items without a photo
+        </label>
+        <label className="user-admin__checkbox">
+          <input
+            type="checkbox"
+            checked={showBackgroundPattern}
+            onChange={(event) => setShowBackgroundPattern(event.target.checked)}
+          />
+          Show a subtle background pattern on gift cards
         </label>
         {wishlistError && <p className="form-error">{wishlistError}</p>}
         {wishlistSaved && <p className="form-success">Saved</p>}
