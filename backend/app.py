@@ -26,6 +26,24 @@ CURRENCY_OPTIONS = ["€", "$", "£", ""]
 DECIMAL_SEPARATOR_OPTIONS = [",", ".", "round"]
 THEME_COLORS = ["#5b5fef", "#d4a017", "#d2601a", "#c026d3"]
 SCRAPE_MAX_BYTES = 5 * 1024 * 1024
+# different sites' bot detection disagrees on what looks suspicious: some (e.g.
+# coolblue.be's AWS WAF) block a bare bot UA outright since a real browser always
+# sends a full header set alongside it; others (e.g. decathlon.pl) do the opposite
+# and block a browser-like UA specifically *because* the rest of the request (TLS/
+# JA3 fingerprint, no JS execution) doesn't actually match a browser, while they
+# let an honestly-labeled bot through. No single header set satisfies both, so
+# scrape_url() tries the honest one first and only falls back to the disguised one
+# on failure.
+SCRAPE_HEADERS_BOT = {"User-Agent": "Mozilla/5.0 (compatible; WilikBot/1.0)"}
+SCRAPE_HEADERS_BROWSER = {
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36",
+    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
+    "Accept-Language": "en-US,en;q=0.9",
+    "Sec-Fetch-Dest": "document",
+    "Sec-Fetch-Mode": "navigate",
+    "Sec-Fetch-Site": "none",
+    "Upgrade-Insecure-Requests": "1",
+}
 
 
 def find_user_by_username(username):
@@ -354,13 +372,8 @@ def scrape_url():
     if not is_safe_scrape_url(url):
         return jsonify({"error": "That URL can't be fetched"}), 400
 
-    try:
-        response = requests.get(
-            url,
-            timeout=5,
-            headers={"User-Agent": "Mozilla/5.0 (compatible; WilikBot/1.0)"},
-            stream=True,
-        )
+    def fetch(headers):
+        response = requests.get(url, timeout=5, headers=headers, stream=True)
         response.raise_for_status()
         # product price data (JSON-LD) is often placed in <body>, not <head>, so read
         # a generous prefix rather than stopping at </head>
@@ -369,9 +382,15 @@ def scrape_url():
             chunks += chunk
             if len(chunks) >= SCRAPE_MAX_BYTES:
                 break
-        content = bytes(chunks)
+        return bytes(chunks)
+
+    try:
+        content = fetch(SCRAPE_HEADERS_BOT)
     except requests.RequestException:
-        return jsonify({"error": "Could not fetch that URL"}), 400
+        try:
+            content = fetch(SCRAPE_HEADERS_BROWSER)
+        except requests.RequestException:
+            return jsonify({"error": "Could not fetch that URL"}), 400
 
     soup = BeautifulSoup(content, "html.parser")
 
