@@ -10,7 +10,7 @@ services:
       - wilik-data:/app/instance
     restart: unless-stopped
     labels:
-      - "com.centurylabs.watchtower.enable=true"
+      - "com.centurylinklabs.watchtower.enable=true"
       - "docker-volume-backup.stop-during-backup=true"
 
   frontend:
@@ -22,7 +22,7 @@ services:
       - backend
     restart: unless-stopped
     labels:
-      - "com.centurylabs.watchtower.enable=true"
+      - "com.centurylinklabs.watchtower.enable=true"
 
   watchtower:
     # containrrr/watchtower is unmaintained (archived Dec 2025) and fails against
