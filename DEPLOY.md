@@ -9,13 +9,13 @@
 
 No local Docker build is required to ship a change — just push to `main`.
 
-## One-time production cutover (L340)
+## One-time production cutover
 
-This only needs to happen once, to move the existing production deployment onto this new setup. Do this carefully, not unattended.
+This only needs to happen once, to move an existing production deployment onto this new setup. Do this carefully, not unattended.
 
 1. **Back up the `wilik-data` volume** before touching anything.
-2. Make sure the GHCR packages (`wilik-backend`, `wilik-frontend`) are set to **Public** in GitHub's package settings, so L340 can pull them without registry credentials.
-3. Copy the updated `docker-compose.yml` and your `.env` (with `SECRET_KEY`) to L340.
+2. Make sure the GHCR packages (`wilik-backend`, `wilik-frontend`) are set to **Public** in GitHub's package settings, so your production host can pull them without registry credentials.
+3. Copy the updated `docker-compose.yml` and your `.env` (with `SECRET_KEY`) to your production host.
 4. Run the initial migration **stamp**, once, before starting the stack normally:
    ```
    docker compose run --rm backend flask db stamp head
@@ -61,7 +61,7 @@ Runs daily at 03:00 by default (`BACKUP_CRON_EXPRESSION`) and keeps 30 days of b
 
 ## Rolling back
 
-Old images stay in GHCR tagged by commit SHA. To roll back, on L340:
+Old images stay in GHCR tagged by commit SHA. To roll back, on your production host:
 ```
 docker compose pull backend  # or manually retag an older SHA as :latest in GHCR
 docker compose up -d
