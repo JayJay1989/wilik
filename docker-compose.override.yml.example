@@ -8,6 +8,13 @@
 #
 # Routing more than one hostname to the same instance? Combine them with
 # || in the rule, e.g. Host(`wilik.example.com`) || Host(`example.com`).
+#
+# Also reachable from outside via a tunnel (Cloudflare Tunnel, etc.) that
+# connects to Traefik on plain HTTP, on the SAME hostname you're routing
+# here on the LAN? Don't add a blanket HTTP->HTTPS redirect on Traefik's
+# web entrypoint -- it'll loop the tunnel's request back on itself. Instead
+# add a second, LAN-only router on the websecure entrypoint (below), and
+# leave this one exactly as-is on the (implicit) web entrypoint.
 
 services:
   frontend:
@@ -18,6 +25,13 @@ services:
       - "traefik.enable=true"
       - "traefik.http.routers.wilik.rule=Host(`wilik.example.com`)"
       - "traefik.http.services.wilik.loadbalancer.server.port=80"
+      # Optional: valid HTTPS on the LAN, alongside a tunnel that still
+      # talks plain HTTP to the router above. Requires a certresolver
+      # configured on Traefik itself (see its own compose file).
+      # - "traefik.http.routers.wilik-secure.rule=Host(`wilik.example.com`)"
+      # - "traefik.http.routers.wilik-secure.entrypoints=websecure"
+      # - "traefik.http.routers.wilik-secure.tls.certresolver=<your-resolver-name>"
+      # - "traefik.http.routers.wilik-secure.service=wilik"
 
 networks:
   default:
