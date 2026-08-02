@@ -36,6 +36,8 @@ This only needs to happen once, to move an existing production deployment onto t
 
 `docker-compose.yml` is meant to stay generic and shared. If you route Wilik through your own reverse proxy (Traefik, Caddy, nginx-proxy, ...), put that config in a `docker-compose.override.yml` file instead -- it's gitignored, meant to hold your own setup, and Compose loads it automatically alongside `docker-compose.yml` with no extra flags. See `docker-compose.override.yml.example` for a Traefik-based template.
 
+If that proxy/tunnel terminates HTTPS for you, set `SESSION_COOKIE_SECURE=true` in `.env` so the session cookie is never sent over plain HTTP. It's off by default since LAN-only or plain-http setups would otherwise get silently locked out of login.
+
 ## Backups
 
 Off-site backups are **optional** -- the `backup` service sits behind a Compose profile and is skipped entirely by a plain `docker compose up -d`. When enabled, it makes an automatic off-site backup: it stops the `backend` container briefly (for a consistent snapshot -- see the `docker-volume-backup.stop-during-backup` label on `backend`), archives the `wilik-data` volume, and uploads it to an S3-compatible bucket using [offen/docker-volume-backup](https://github.com/offen/docker-volume-backup). This uses static credentials (access key + secret key), not an OAuth login, so setup is just filling in `.env` -- no browser flow, no expiring tokens to manage.

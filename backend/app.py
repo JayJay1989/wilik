@@ -72,8 +72,24 @@ def is_safe_scrape_url(url):
 
 app = Flask(__name__)
 # signs the session cookie -- override via env in any real deployment
-app.config["SECRET_KEY"] = os.environ.get("SECRET_KEY", "dev-secret-change-me")
+DEFAULT_DEV_SECRET_KEY = "dev-secret-change-me"
+app.config["SECRET_KEY"] = os.environ.get("SECRET_KEY", DEFAULT_DEV_SECRET_KEY)
+if app.config["SECRET_KEY"] == DEFAULT_DEV_SECRET_KEY:
+    print(
+        "WARNING: SECRET_KEY is not set (using the public dev default) -- anyone can forge "
+        "login sessions. Set a real SECRET_KEY in .env before exposing this outside your own machine.",
+        flush=True,
+    )
 app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///wilik.db"
+
+# not everyone self-hosting this puts it behind HTTPS (LAN-only setups, plain http://,
+# reverse proxies without TLS...) -- SESSION_COOKIE_SECURE would silently break login
+# for them since browsers refuse to send a Secure cookie back over plain HTTP. Off by
+# default to keep that working out of the box; opt in via .env once you're sure every
+# request reaches this app over HTTPS.
+app.config["SESSION_COOKIE_SECURE"] = os.environ.get("SESSION_COOKIE_SECURE", "false").lower() == "true"
+# no legitimate flow here needs the cookie sent cross-site, so this is safe to always enable
+app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
 
 # allows the React app (different port) to send/receive the session cookie
 CORS(app, supports_credentials=True, origins=["http://localhost:5173"])
