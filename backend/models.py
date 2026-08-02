@@ -32,6 +32,10 @@ class User(UserMixin, db.Model):
     # opt-out of the public directory (see AppSettings.public_directory_enabled) -- the
     # share link still works either way, this only controls the browsable listing
     show_in_directory = db.Column(db.Boolean, nullable=False, default=True)
+    # brute-force login lockout (see login() in app.py) -- stored on the row, not in
+    # memory, so it holds up across gunicorn's multiple worker processes
+    failed_login_attempts = db.Column(db.Integer, nullable=False, default=0)
+    locked_until = db.Column(db.DateTime, nullable=True)
 
     gifts = db.relationship("Gift", backref="owner", cascade="all, delete-orphan")
 

@@ -1,8 +1,10 @@
 import ipaddress
 import json
+import math
 import os
 import secrets
 import socket
+from datetime import datetime, timedelta, timezone
 from urllib.parse import urlparse
 
 import requests
@@ -25,6 +27,8 @@ from models import AppSettings, User, db, Gift, Claim, generate_share_token
 CURRENCY_OPTIONS = ["€", "$", "£", ""]
 DECIMAL_SEPARATOR_OPTIONS = [",", ".", "round"]
 THEME_COLORS = ["#5b5fef", "#d4a017", "#d2601a", "#c026d3"]
+LOGIN_MAX_ATTEMPTS = 5
+LOGIN_LOCKOUT_MINUTES = 15
 SCRAPE_MAX_BYTES = 5 * 1024 * 1024
 # different sites' bot detection disagrees on what looks suspicious: some (e.g.
 # coolblue.be's AWS WAF) block a bare bot UA outright since a real browser always
@@ -263,11 +267,30 @@ def login():
     user = find_user_by_username(data.get("username"))
     if user is None:
         return jsonify({"error": "Invalid username or password"}), 401
+
+    now = datetime.now(timezone.utc).replace(tzinfo=None)  # naive UTC, matching the DateTime column
+    if user.locked_until is not None:
+        if user.locked_until > now:
+            minutes_left = math.ceil((user.locked_until - now).total_seconds() / 60)
+            return jsonify({"error": f"Too many failed attempts. Try again in {minutes_left} minute(s)."}), 429
+        # lock has expired -- clear it so a good password below can succeed
+        user.locked_until = None
+        user.failed_login_attempts = 0
+
     # new/reset accounts (or older ones still pending a forced change) skip
     # password verification entirely -- must_change_password forces a real one right after
     needs_setup = user.password_hash is None or user.must_change_password
     if not needs_setup and not user.check_password(data.get("password", "")):
+        user.failed_login_attempts += 1
+        if user.failed_login_attempts >= LOGIN_MAX_ATTEMPTS:
+            user.locked_until = now + timedelta(minutes=LOGIN_LOCKOUT_MINUTES)
+            user.failed_login_attempts = 0
+        db.session.commit()
         return jsonify({"error": "Invalid username or password"}), 401
+
+    user.failed_login_attempts = 0
+    user.locked_until = None
+    db.session.commit()
     login_user(user)
     return jsonify(user.to_dict())
 

@@ -51,8 +51,10 @@ function Login({ appName, onLogin }) {
       body: JSON.stringify({ username, password: passwordValue }),
     }).then((response) => {
       if (!response.ok) {
-        setBusy(false)
-        setError('Invalid username or password')
+        response.json().then((data) => {
+          setBusy(false)
+          setError(data.error || 'Invalid username or password')
+        })
         return
       }
       response.json().then(onLogin)
