@@ -4,7 +4,7 @@ This assumes you've already done the Quick start in [README.md](README.md#quick-
 
 ## How updates ship
 
-This is the pipeline behind the images `docker-compose.yml` pulls by default (`ghcr.io/joostvanopdorp/wilik-*`). If you're just running Wilik as-is, you don't need to do anything here, this happens on the upstream repo and reaches your host automatically via Watchtower. It only becomes your `main` to push to if you're running your own fork with your own CI and registry.
+This describes the pipeline that produces the default images in `docker-compose.yml` (`ghcr.io/joostvanopdorp/wilik-*`). If you're just running Wilik as-is, there's nothing to do here: it runs on the upstream repo, and updates reach your host automatically via Watchtower. It's only actionable for you directly if you're running your own fork with your own CI and registry, since then `main` refers to your fork.
 
 1. Push to `main`.
 2. GitHub Actions (`.github/workflows/build-and-push.yml`) builds the backend and frontend images and pushes them to GHCR, tagged `latest` and with the commit SHA.
@@ -22,7 +22,7 @@ docker compose up -d
 
 ## HTTPS and reverse proxies
 
-`docker-compose.yml` is meant to stay generic and shared. If you route Wilik through your own reverse proxy (Traefik, Caddy, nginx-proxy, ...), put that config in a `docker-compose.override.yml` file instead. It's gitignored, meant to hold your own setup, and Compose loads it automatically alongside `docker-compose.yml` with no extra flags. See `docker-compose.override.yml.example` for a Traefik-based template.
+`docker-compose.yml` is kept generic on purpose, so you can pull future updates to it without fighting merge conflicts with your own setup. If you route Wilik through a reverse proxy (Traefik, Caddy, nginx-proxy, ...), put that config in `docker-compose.override.yml` instead: Compose loads it automatically alongside `docker-compose.yml`, no extra flags needed. It's gitignored, so it's entirely yours, git never touches it. See `docker-compose.override.yml.example` for a Traefik-based template.
 
 If that proxy or tunnel terminates HTTPS for you, set `SESSION_COOKIE_SECURE=true` in `.env` so the session cookie is never sent over plain HTTP. It's off by default since LAN-only or plain-http setups would otherwise get silently locked out of login.
 
