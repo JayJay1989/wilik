@@ -20,37 +20,46 @@ A self-hosted wishlist app. Each user keeps a list of things they want, shares i
 - 🛠️ **Admin panel** for managing users and resetting passwords.
 - 🌓 **Light/dark theme**, with dark as the default (as it should be).
 
-## Running it
-
 Wilik is meant to be self-hosted: your data stays on your server, not on someone else's registry quietly logging what everyone wants for their birthday.
 
-### With Docker
+## Quick start
 
 ```
 cp .env.example .env   # set a real SECRET_KEY
 docker compose up -d
 ```
 
-The app is served on port 8090. Push to `main` and GitHub Actions builds fresh images automatically. Watchtower picks them up and rolls them out, so shipping an update is just `git push`, not a maintenance window. See [DEPLOY.md](DEPLOY.md) for the full deployment and release process.
+The app is served on port 8090. That's it for a plain, single-machine setup, no reverse proxy, no backups.
 
-### For development
+Updates then arrive on their own: Watchtower checks for new images every few minutes and rolls them out automatically, no manual steps, no maintenance window.
+
+For HTTPS/reverse proxies, off-site backups, rolling back, running your own fork with your own CI/registry, or moving an older install onto this setup, see [DEPLOY.md](DEPLOY.md).
+
+## Development
 
 Backend is Flask + SQLAlchemy + SQLite, with Flask-Migrate handling schema changes. Frontend is React + Vite. You'll need Python 3.13+ and Node 22+.
 
+Install dependencies, once:
 ```
-# backend
 cd backend
-python -m venv venv
-venv\Scripts\python.exe -m pip install -r requirements.txt
-venv\Scripts\python.exe app.py
+python -m venv .venv
+```
+Then install the backend requirements using that venv's own Python:
+- Windows: `.venv\Scripts\python.exe -m pip install -r requirements.txt`
+- macOS/Linux: `.venv/bin/python -m pip install -r requirements.txt`
 
-# frontend (separate terminal)
-cd frontend
+```
+cd ../frontend
 npm install
+cd ..
+npm install   # root install, only needed for the combined dev command below
+```
+
+Then, from the repo root:
+```
 npm run dev
 ```
-
-Or, from the repo root, `npm run dev` starts both at once.
+This runs backend and frontend together in one terminal, cross-platform. To work on just one side instead: `npm run dev:backend` or `npm run dev:frontend`.
 
 The first run creates an admin account (`Admin` / `admin`). You'll be asked to set a real username and password the first time you log in.
 
