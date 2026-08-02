@@ -4,7 +4,7 @@
 
 # Wilik
 
-A self-hosted wishlist app. Each user keeps a list of things they want, shares it via a link that works for anyone who has it (or opts into the browsable directory so people can find it without one), and visitors can claim items or mark them as purchased without needing an account.
+A self-hosted wishlist app, named after the Dutch "wil ik" ("I want that"). Each user keeps a list of things they want, shares it via a link that works for anyone who has it (or opts into the browsable directory so people can find it without one), and visitors can claim items or mark them as purchased without needing an account.
 
 <p align="center">
   <img src="docs/screenshots/screenshot_login.png" width="230" alt="Login screen">
