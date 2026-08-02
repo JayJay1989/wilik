@@ -5,6 +5,9 @@
 # meant to hold your own environment-specific setup, not the app itself)
 # and adjust the hostname. Compose picks it up automatically alongside
 # docker-compose.yml, no extra flags needed.
+#
+# Routing more than one hostname to the same instance? Combine them with
+# || in the rule, e.g. Host(`wilik.example.com`) || Host(`example.com`).
 
 services:
   frontend:
