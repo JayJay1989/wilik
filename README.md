@@ -29,7 +29,7 @@ cp .env.example .env   # set a real SECRET_KEY
 docker compose up -d
 ```
 
-The app is served on port 8090. That's it for a plain, single-machine setup, no reverse proxy, no backups.
+The app is served on port 8090, with a first admin account already created (`Admin` / `admin`). You'll be asked to set a real username and password the first time you log in. That's it for a plain, single-machine setup, no reverse proxy, no backups.
 
 Updates then arrive on their own: Watchtower checks for new images every few minutes and rolls them out automatically, no manual steps, no maintenance window.
 
@@ -55,13 +55,17 @@ cd ..
 npm install   # root install, only needed for the combined dev command below
 ```
 
+Set up the database, once, run from `backend/`:
+- Windows: `.venv\Scripts\python.exe -m flask db upgrade` then `.venv\Scripts\python.exe -m flask bootstrap-db`
+- macOS/Linux: `.venv/bin/python -m flask db upgrade` then `.venv/bin/python -m flask bootstrap-db`
+
+This creates the schema and a first admin account (`Admin` / `admin`). You'll be asked to set a real username and password the first time you log in.
+
 Then, from the repo root:
 ```
 npm run dev
 ```
 This runs backend and frontend together in one terminal, cross-platform. To work on just one side instead: `npm run dev:backend` or `npm run dev:frontend`.
-
-The first run creates an admin account (`Admin` / `admin`). You'll be asked to set a real username and password the first time you log in.
 
 ## License
 
