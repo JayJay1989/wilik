@@ -194,15 +194,6 @@ function AdminPage({ currentUser, appName, onAppNameChange }) {
       </Link>
       <h2>Admin panel</h2>
 
-      <h3>App name</h3>
-      <form className="gift-form" onSubmit={handleAppNameSubmit}>
-        <input value={appNameInput} onChange={(event) => setAppNameInput(event.target.value)} required />
-        {appNameError && <p className="form-error">{appNameError}</p>}
-        <div className="gift-form__actions">
-          <button type="submit">Change app name</button>
-        </div>
-      </form>
-
       <h3>Gift directory</h3>
       <form className="gift-form" onSubmit={handleDirectorySubmit}>
         <label className="user-admin__checkbox">
@@ -400,6 +391,15 @@ function AdminPage({ currentUser, appName, onAppNameChange }) {
               'Add user'
             )}
           </button>
+        </div>
+      </form>
+
+      <h3>App name</h3>
+      <form className="gift-form" onSubmit={handleAppNameSubmit}>
+        <input value={appNameInput} onChange={(event) => setAppNameInput(event.target.value)} required />
+        {appNameError && <p className="form-error">{appNameError}</p>}
+        <div className="gift-form__actions">
+          <button type="submit">Change app name</button>
         </div>
       </form>
     </div>
