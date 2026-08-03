@@ -9,6 +9,7 @@ import ReceivedPage from './pages/ReceivedPage'
 import SettingsPage from './pages/SettingsPage'
 import AdminPage from './pages/AdminPage'
 import PublicWishlistPage from './pages/PublicWishlistPage'
+import AccountSetupPage from './pages/AccountSetupPage'
 import GiftDirectoryPage from './pages/GiftDirectoryPage'
 import WishlistChooserPage from './pages/WishlistChooserPage'
 import WishlistBrowsePage from './pages/WishlistBrowsePage'
@@ -33,10 +34,23 @@ function AuthenticatedApp({ appName, onAppNameChange }) {
     })
   }
 
+  // an admin can reset a still-logged-in user's password out from under them; unless that
+  // account is opted into the passwordless flow (handled in-session below via
+  // FirstLoginSetup), it no longer has any password to re-authenticate with, so the only
+  // way back in is the fresh setup link the admin was just given -- log them out to get there
+  useEffect(() => {
+    if (currentUser && currentUser.must_change_password && !currentUser.allow_passwordless_setup) {
+      handleLogout()
+    }
+  }, [currentUser])
+
   if (currentUser === undefined) return null
   if (currentUser === null) return <Login appName={appName} onLogin={setCurrentUser} />
-  if (currentUser.must_change_password) {
+  if (currentUser.must_change_password && currentUser.allow_passwordless_setup) {
     return <FirstLoginSetup appName={appName} currentUser={currentUser} onUpdate={setCurrentUser} />
+  }
+  if (currentUser.must_change_password) {
+    return <Login appName={appName} onLogin={setCurrentUser} />
   }
 
   return (
@@ -124,6 +138,7 @@ function App() {
     <Routes>
       <Route path="/list/:token" element={<PublicWishlistPage appName={appName} />} />
       <Route path="/directory" element={<GiftDirectoryPage appName={appName} />} />
+      <Route path="/setup/:token" element={<AccountSetupPage appName={appName} />} />
       <Route path="/*" element={<AuthenticatedApp appName={appName} onAppNameChange={setAppName} />} />
     </Routes>
   )

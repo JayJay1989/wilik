@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
-import { PencilIcon, TrashIcon } from '../components/Icons'
+import { PencilIcon, TrashIcon, SpinnerIcon } from '../components/Icons'
 
 const API_BASE = '/api'
 
@@ -10,13 +10,20 @@ function AdminPage({ currentUser, appName, onAppNameChange }) {
   const [appNameError, setAppNameError] = useState(null)
   const [username, setUsername] = useState('')
   const [isAdmin, setIsAdmin] = useState(false)
+  const [passwordless, setPasswordless] = useState(false)
+  const [creatingUser, setCreatingUser] = useState(false)
   const [userError, setUserError] = useState(null)
-  const [resetMessage, setResetMessage] = useState(null)
-  const [createMessage, setCreateMessage] = useState(null)
+  const [resetNotice, setResetNotice] = useState(null)
+  const [resetSetupLink, setResetSetupLink] = useState(null)
+  const [resetLinkCopied, setResetLinkCopied] = useState(false)
+  const [createNotice, setCreateNotice] = useState(null)
+  const [createSetupLink, setCreateSetupLink] = useState(null)
+  const [createLinkCopied, setCreateLinkCopied] = useState(false)
   const [editingUserId, setEditingUserId] = useState(null)
   const [editUsername, setEditUsername] = useState('')
   const [editListName, setEditListName] = useState('')
   const [editShowInDirectory, setEditShowInDirectory] = useState(true)
+  const [editResetPasswordless, setEditResetPasswordless] = useState(false)
   const [editError, setEditError] = useState(null)
   const [publicDirectoryEnabled, setPublicDirectoryEnabled] = useState(true)
   const [directoryError, setDirectoryError] = useState(null)
@@ -65,24 +72,44 @@ function AdminPage({ currentUser, appName, onAppNameChange }) {
     })
   }
 
+  function handleCopyLink(url, setCopied) {
+    navigator.clipboard.writeText(url).then(() => {
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+    })
+  }
+
   function handleCreateUser(event) {
     event.preventDefault()
     setUserError(null)
+    setCreatingUser(true)
     fetch(`${API_BASE}/users`, {
       method: 'POST',
       credentials: 'include',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ username, is_admin: isAdmin }),
+      body: JSON.stringify({ username, is_admin: isAdmin, passwordless }),
     }).then((response) => {
       if (!response.ok) {
+        setCreatingUser(false)
         response.json().then((data) => setUserError(data.error))
         return
       }
       response.json().then((newUser) => {
+        setCreatingUser(false)
         setUsers((current) => [...current, newUser])
-        setCreateMessage(`${newUser.username} will be asked to set a password the first time they log in.`)
+        setCreateSetupLink(
+          newUser.setup_token
+            ? { username: newUser.username, url: `${window.location.origin}/setup/${newUser.setup_token}` }
+            : null
+        )
+        setCreateNotice(
+          newUser.setup_token
+            ? null
+            : `${newUser.username} can log in immediately with just their username. They'll be asked to set a password.`
+        )
         setUsername('')
         setIsAdmin(false)
+        setPasswordless(false)
       })
     })
   }
@@ -96,16 +123,29 @@ function AdminPage({ currentUser, appName, onAppNameChange }) {
 
   function handleResetPassword(user) {
     if (!confirm(`Reset ${user.username}'s password? They'll set a new one next time they log in.`)) return
-    setResetMessage(null)
-    fetch(`${API_BASE}/users/${user.id}/reset-password`, { method: 'POST', credentials: 'include' }).then(
-      (response) => {
-        if (!response.ok) return
-        response.json().then((updatedUser) => {
-          setUsers((current) => current.map((u) => (u.id === updatedUser.id ? updatedUser : u)))
-          setResetMessage(`${user.username} will be asked to set a new password next time they log in.`)
-        })
-      }
-    )
+    setResetNotice(null)
+    setResetSetupLink(null)
+    fetch(`${API_BASE}/users/${user.id}/reset-password`, {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ passwordless: editResetPasswordless }),
+    }).then((response) => {
+      if (!response.ok) return
+      response.json().then((updatedUser) => {
+        setUsers((current) => current.map((u) => (u.id === updatedUser.id ? updatedUser : u)))
+        setResetSetupLink(
+          updatedUser.setup_token
+            ? { username: user.username, url: `${window.location.origin}/setup/${updatedUser.setup_token}` }
+            : null
+        )
+        setResetNotice(
+          updatedUser.setup_token
+            ? null
+            : `${user.username} can log in immediately with just their username. They'll be asked to set a new password.`
+        )
+      })
+    })
   }
 
   function startEditUser(user) {
@@ -113,7 +153,10 @@ function AdminPage({ currentUser, appName, onAppNameChange }) {
     setEditUsername(user.username)
     setEditListName(user.list_name)
     setEditShowInDirectory(user.show_in_directory)
+    setEditResetPasswordless(false)
     setEditError(null)
+    setResetNotice(null)
+    setResetSetupLink(null)
   }
 
   function handleEditSubmit(event, user) {
@@ -174,7 +217,6 @@ function AdminPage({ currentUser, appName, onAppNameChange }) {
 
       <h3>Users</h3>
       <div className="card">
-        {resetMessage && <p className="form-success">{resetMessage}</p>}
         <ul className="user-admin__list">
           {users.map((user) => (
             <li key={user.id}>
@@ -212,11 +254,40 @@ function AdminPage({ currentUser, appName, onAppNameChange }) {
                   {user.id !== currentUser.id && (
                     <label>
                       Password
+                      <label className="user-admin__checkbox">
+                        <input
+                          type="checkbox"
+                          checked={editResetPasswordless}
+                          onChange={(event) => setEditResetPasswordless(event.target.checked)}
+                        />
+                        Allow first login with just a username, no setup link (not recommended)
+                      </label>
                       <div className="gift-form__actions">
                         <button type="button" className="btn-primary" onClick={() => handleResetPassword(user)}>
                           Reset password
                         </button>
                       </div>
+                      {resetSetupLink && (
+                        <div className="form-success">
+                          <p>{resetSetupLink.username} can't log in until they use this one-time setup link:</p>
+                          <div className="inline-field">
+                            <input
+                              className="share-link__input"
+                              value={resetSetupLink.url}
+                              readOnly
+                              onFocus={(event) => event.target.select()}
+                            />
+                            <button
+                              type="button"
+                              className="btn-primary"
+                              onClick={() => handleCopyLink(resetSetupLink.url, setResetLinkCopied)}
+                            >
+                              {resetLinkCopied ? 'Copied!' : 'Copy'}
+                            </button>
+                          </div>
+                        </div>
+                      )}
+                      {resetNotice && <p className="form-success">{resetNotice}</p>}
                     </label>
                   )}
                   <label>
@@ -265,12 +336,48 @@ function AdminPage({ currentUser, appName, onAppNameChange }) {
         </label>
         <label className="user-admin__checkbox">
           <input type="checkbox" checked={isAdmin} onChange={(event) => setIsAdmin(event.target.checked)} />
-          Admin
+          Make this user an admin
+        </label>
+        <label className="user-admin__checkbox">
+          <input
+            type="checkbox"
+            checked={passwordless}
+            onChange={(event) => setPasswordless(event.target.checked)}
+          />
+          Allow first login with just a username, no setup link (not recommended)
         </label>
         {userError && <p className="form-error">{userError}</p>}
-        {createMessage && <p className="form-success">{createMessage}</p>}
+        {createSetupLink && (
+          <div className="form-success">
+            <p>{createSetupLink.username} can't log in yet. Send them this one-time setup link:</p>
+            <div className="inline-field">
+              <input
+                className="share-link__input"
+                value={createSetupLink.url}
+                readOnly
+                onFocus={(event) => event.target.select()}
+              />
+              <button
+                type="button"
+                className="btn-primary"
+                onClick={() => handleCopyLink(createSetupLink.url, setCreateLinkCopied)}
+              >
+                {createLinkCopied ? 'Copied!' : 'Copy'}
+              </button>
+            </div>
+          </div>
+        )}
+        {createNotice && <p className="form-success">{createNotice}</p>}
         <div className="gift-form__actions">
-          <button type="submit">Add user</button>
+          <button type="submit" disabled={creatingUser}>
+            {creatingUser ? (
+              <>
+                <SpinnerIcon /> Adding…
+              </>
+            ) : (
+              'Add user'
+            )}
+          </button>
         </div>
       </form>
     </div>

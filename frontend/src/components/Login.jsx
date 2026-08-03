@@ -26,8 +26,14 @@ function Login({ appName, onLogin }) {
       }
       response.json().then((data) => {
         if (data.needs_password_setup) {
-          // nothing to collect -- log straight in, the forced setup screen takes it from here
-          logIn('')
+          if (data.passwordless_allowed) {
+            // admin explicitly opted this account into skipping the setup link --
+            // log straight in, the forced setup screen takes it from here
+            logIn('')
+            return
+          }
+          setBusy(false)
+          setStep('needs-setup')
           return
         }
         setBusy(false)
@@ -70,7 +76,20 @@ function Login({ appName, onLogin }) {
   return (
     <div className="login-page">
       <GiftDirectory />
-      {step === 'username' ? (
+      {step === 'needs-setup' ? (
+        <form className="gift-form login-form" onSubmit={(event) => event.preventDefault()}>
+          <div className="login-form__brand">
+            <Logo size={40} />
+            <h1>{appName}</h1>
+          </div>
+          <p className="login-form__hint">
+            <strong>{username}</strong>'s account isn't set up yet. Ask your admin for your setup link.
+          </p>
+          <button type="button" className="login-form__back" onClick={handleBack}>
+            Go back
+          </button>
+        </form>
+      ) : step === 'username' ? (
         <form className="gift-form login-form" onSubmit={handleUsernameSubmit}>
           <div className="login-form__brand">
             <Logo size={40} />

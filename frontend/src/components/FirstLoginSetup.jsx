@@ -4,6 +4,8 @@ import { SpinnerIcon } from './Icons'
 
 const API_BASE = '/api'
 
+// only ever shown for an account the admin explicitly opted into the passwordless flow
+// (allow_passwordless_setup) -- everyone else completes setup via their one-time /setup/:token link
 function FirstLoginSetup({ appName, currentUser, onUpdate }) {
   const [newUsername, setNewUsername] = useState(currentUser.username)
   const [newPassword, setNewPassword] = useState('')

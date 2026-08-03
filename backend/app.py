@@ -5,7 +5,7 @@ import os
 import secrets
 import socket
 from datetime import datetime, timedelta, timezone
-from urllib.parse import urlparse
+from urllib.parse import urljoin, urlparse
 
 import requests
 from bs4 import BeautifulSoup
@@ -30,6 +30,7 @@ THEME_COLORS = ["#5b5fef", "#d4a017", "#d2601a", "#c026d3"]
 LOGIN_MAX_ATTEMPTS = 5
 LOGIN_LOCKOUT_MINUTES = 15
 SCRAPE_MAX_BYTES = 5 * 1024 * 1024
+MAX_SCRAPE_REDIRECTS = 5
 # different sites' bot detection disagrees on what looks suspicious: some (e.g.
 # coolblue.be's AWS WAF) block a bare bot UA outright since a real browser always
 # sends a full header set alongside it; others (e.g. decathlon.pl) do the opposite
@@ -52,6 +53,18 @@ SCRAPE_HEADERS_BROWSER = {
 
 def find_user_by_username(username):
     return User.query.filter(db.func.lower(User.username) == (username or "").lower()).first()
+
+
+SETUP_TOKEN_VALID_DAYS = 7
+
+
+def issue_setup_token(user):
+    """Gives the user a fresh one-time setup token, replacing any existing one."""
+    user.setup_token = secrets.token_urlsafe(32)
+    user.setup_token_expires_at = datetime.now(timezone.utc).replace(tzinfo=None) + timedelta(
+        days=SETUP_TOKEN_VALID_DAYS
+    )
+    return user.setup_token
 
 
 def is_safe_scrape_url(url):
@@ -129,12 +142,13 @@ def bootstrap_db():
     with app.app_context():
         if User.query.count() == 0:
             admin = User(username="Admin", is_admin=True, list_name="My wishlist", must_change_password=True)
-            admin.set_password("admin")
+            token = issue_setup_token(admin)
             db.session.add(admin)
             db.session.commit()
             print("=" * 50)
-            print("Created first admin account: username='Admin' password='admin'")
-            print("You'll be asked to choose your own username and password on first login.")
+            print("Created first admin account: username='Admin'")
+            print(f"Finish setting it up at: /setup/{token}")
+            print(f"This link expires in {SETUP_TOKEN_VALID_DAYS} days.")
             print("=" * 50)
 
         if AppSettings.query.count() == 0:
@@ -225,14 +239,63 @@ def update_account():
     return jsonify(current_user.to_dict())
 
 
+def find_valid_setup_user(token):
+    user = User.query.filter_by(setup_token=token).first()
+    if user is None:
+        return None
+    now = datetime.now(timezone.utc).replace(tzinfo=None)
+    if user.setup_token_expires_at is None or user.setup_token_expires_at < now:
+        return None
+    return user
+
+
+@app.route("/api/account/setup/<token>")
+def get_account_setup(token):
+    user = find_valid_setup_user(token)
+    if user is None:
+        return jsonify({"error": "This setup link is invalid or has expired"}), 404
+    return jsonify({"username": user.username})
+
+
+@app.route("/api/account/setup/<token>", methods=["POST"])
+def complete_account_setup(token):
+    user = find_valid_setup_user(token)
+    if user is None:
+        return jsonify({"error": "This setup link is invalid or has expired"}), 404
+
+    data = request.get_json()
+
+    new_username = data.get("new_username", user.username).strip()
+    if not new_username:
+        return jsonify({"error": "Username can't be empty"}), 400
+    if new_username.lower() != user.username.lower() and find_user_by_username(new_username):
+        return jsonify({"error": "Username already taken"}), 409
+
+    new_password = data.get("new_password", "")
+    if len(new_password) < 8:
+        return jsonify({"error": "New password must be at least 8 characters"}), 400
+
+    user.username = new_username
+    user.set_password(new_password)
+    user.must_change_password = False
+    user.allow_passwordless_setup = False
+    user.setup_token = None
+    user.setup_token_expires_at = None
+    db.session.commit()
+    # possession of the (now consumed) setup token is the proof of identity
+    login_user(user)
+    return jsonify(user.to_dict())
+
+
 @app.route("/api/account/first-login", methods=["PUT"])
 @login_required
 def first_login_setup():
-    if not current_user.must_change_password:
+    # only reachable for an account the admin explicitly opted into the passwordless
+    # flow (see allow_passwordless_setup) -- @login_required already proved they got in
+    # via that flow, which is proof enough of identity without asking for a password here
+    if not current_user.must_change_password or not current_user.allow_passwordless_setup:
         return jsonify({"error": "Nothing to do"}), 400
 
-    # @login_required already proved they know the current (placeholder) password;
-    # asking for it again here would just be re-checking something already verified
     data = request.get_json()
 
     new_username = data.get("new_username", current_user.username).strip()
@@ -248,6 +311,7 @@ def first_login_setup():
     current_user.username = new_username
     current_user.set_password(new_password)
     current_user.must_change_password = False
+    current_user.allow_passwordless_setup = False
     db.session.commit()
     return jsonify(current_user.to_dict())
 
@@ -274,7 +338,15 @@ def login_lookup():
     user = find_user_by_username(data.get("username"))
     if user is None:
         return jsonify({"error": "User not found"}), 404
-    return jsonify({"needs_password_setup": user.password_hash is None or user.must_change_password})
+    needs_setup = user.password_hash is None or user.must_change_password
+    return jsonify(
+        {
+            "needs_password_setup": needs_setup,
+            # only true when an admin explicitly opted this account into skipping the
+            # setup link -- lets the login form fall back to the old auto-login flow
+            "passwordless_allowed": needs_setup and user.allow_passwordless_setup,
+        }
+    )
 
 
 @app.route("/api/login", methods=["POST"])
@@ -293,10 +365,12 @@ def login():
         user.locked_until = None
         user.failed_login_attempts = 0
 
-    # new/reset accounts (or older ones still pending a forced change) skip
-    # password verification entirely -- must_change_password forces a real one right after
     needs_setup = user.password_hash is None or user.must_change_password
-    if not needs_setup and not user.check_password(data.get("password", "")):
+    # skips password verification only when an admin explicitly opted this account into
+    # that (allow_passwordless_setup) -- otherwise a pending account simply can't log in
+    # via password at all and must use its one-time setup link instead
+    passwordless_ok = needs_setup and user.allow_passwordless_setup
+    if not passwordless_ok and not user.check_password(data.get("password", "")):
         user.failed_login_attempts += 1
         if user.failed_login_attempts >= LOGIN_MAX_ATTEMPTS:
             user.locked_until = now + timedelta(minutes=LOGIN_LOCKOUT_MINUTES)
@@ -341,12 +415,23 @@ def create_user():
     data = request.get_json()
     if find_user_by_username(data.get("username")):
         return jsonify({"error": "Username already taken"}), 409
-    # no password yet: a blank password_hash lets them log in with anything, since
-    # must_change_password forces them to set a real one right after
-    user = User(username=data["username"], is_admin=data.get("is_admin", False), must_change_password=True)
+    # no password yet: normally they can't log in at all until they use the one-time setup
+    # link below -- unless the admin explicitly opts this account into the old, weaker
+    # "just know the username" flow via passwordless
+    passwordless = bool(data.get("passwordless", False))
+    user = User(
+        username=data["username"],
+        is_admin=data.get("is_admin", False),
+        must_change_password=True,
+        allow_passwordless_setup=passwordless,
+    )
+    token = None if passwordless else issue_setup_token(user)
     db.session.add(user)
     db.session.commit()
-    return jsonify(user.to_dict()), 201
+    response = user.to_dict()
+    if token:
+        response["setup_token"] = token
+    return jsonify(response), 201
 
 
 @app.route("/api/users/<int:user_id>", methods=["DELETE"])
@@ -370,10 +455,22 @@ def reset_password(user_id):
     if user_id == current_user.id:
         return jsonify({"error": "Use account settings to change your own password"}), 400
     user = db.get_or_404(User, user_id)
+    data = request.get_json(silent=True) or {}
+    passwordless = bool(data.get("passwordless", False))
     user.password_hash = None
     user.must_change_password = True
+    user.allow_passwordless_setup = passwordless
+    if passwordless:
+        user.setup_token = None
+        user.setup_token_expires_at = None
+        token = None
+    else:
+        token = issue_setup_token(user)
     db.session.commit()
-    return jsonify(user.to_dict())
+    response = user.to_dict()
+    if token:
+        response["setup_token"] = token
+    return jsonify(response)
 
 
 @app.route("/api/users/<int:user_id>", methods=["PUT"])
@@ -412,16 +509,31 @@ def scrape_url():
         return jsonify({"error": "That URL can't be fetched"}), 400
 
     def fetch(headers):
-        response = requests.get(url, timeout=5, headers=headers, stream=True)
-        response.raise_for_status()
-        # product price data (JSON-LD) is often placed in <body>, not <head>, so read
-        # a generous prefix rather than stopping at </head>
-        chunks = bytearray()
-        for chunk in response.iter_content(chunk_size=64 * 1024):
-            chunks += chunk
-            if len(chunks) >= SCRAPE_MAX_BYTES:
-                break
-        return bytes(chunks)
+        # allow_redirects=False + manual follow: a redirect target is never re-checked by
+        # is_safe_scrape_url() above, so a public URL could otherwise 302 to an internal
+        # address (or DNS-rebind to one) and slip past the up-front check entirely
+        current_url = url
+        for _ in range(MAX_SCRAPE_REDIRECTS + 1):
+            response = requests.get(current_url, timeout=5, headers=headers, stream=True, allow_redirects=False)
+            if response.is_redirect or response.is_permanent_redirect:
+                location = response.headers.get("Location")
+                response.close()
+                if not location:
+                    raise requests.RequestException("Redirect with no Location header")
+                current_url = urljoin(current_url, location)
+                if not is_safe_scrape_url(current_url):
+                    raise requests.RequestException("Redirected to an unsafe URL")
+                continue
+            response.raise_for_status()
+            # product price data (JSON-LD) is often placed in <body>, not <head>, so read
+            # a generous prefix rather than stopping at </head>
+            chunks = bytearray()
+            for chunk in response.iter_content(chunk_size=64 * 1024):
+                chunks += chunk
+                if len(chunks) >= SCRAPE_MAX_BYTES:
+                    break
+            return bytes(chunks)
+        raise requests.RequestException("Too many redirects")
 
     try:
         content = fetch(SCRAPE_HEADERS_BOT)

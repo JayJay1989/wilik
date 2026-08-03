@@ -25,6 +25,14 @@ class User(UserMixin, db.Model):
     decimal_separator = db.Column(db.String(10), nullable=False, default=",")
     theme_color = db.Column(db.String(7), nullable=True)  # hex code, e.g. "#0d9488"; null = default theme
     must_change_password = db.Column(db.Boolean, nullable=False, default=False)
+    # one-time credential for /setup/<token>: proves identity in place of a password when
+    # the account has none yet (new account) or had its password cleared (admin reset)
+    setup_token = db.Column(db.String(64), unique=True, nullable=True)
+    setup_token_expires_at = db.Column(db.DateTime, nullable=True)
+    # admin's explicit, per-account opt-out of the setup-link flow above: lets this account
+    # log in with just its username while must_change_password is set, no token required.
+    # Off by default -- only ever turned on by an admin knowingly accepting that trade-off.
+    allow_passwordless_setup = db.Column(db.Boolean, nullable=False, default=False)
     show_image_placeholder = db.Column(db.Boolean, nullable=False, default=True)
     show_background_pattern = db.Column(db.Boolean, nullable=False, default=True)
     # unguessable token for the public, no-login wishlist link; anyone with it can view + claim items
@@ -57,6 +65,7 @@ class User(UserMixin, db.Model):
             "decimal_separator": self.decimal_separator,
             "theme_color": self.theme_color,
             "must_change_password": self.must_change_password,
+            "allow_passwordless_setup": self.allow_passwordless_setup,
             "has_password": self.password_hash is not None,
             "show_image_placeholder": self.show_image_placeholder,
             "show_background_pattern": self.show_background_pattern,
