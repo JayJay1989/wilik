@@ -9,7 +9,7 @@ export const THEME_PRESETS = [
   { name: 'Blurple', value: '#5b5fef', swatchColor: '#5b5fef', ink: 'light' },
   { name: 'Gold', value: '#d4a017', swatchColor: '#d4a017', ink: 'dark' },
   { name: 'Burnt orange', value: '#d2601a', swatchColor: '#d2601a', ink: 'dark' },
-  { name: 'Magenta', value: '#c026d3', swatchColor: '#c026d3', ink: 'light' },
+  { name: 'Magenta', value: '#e83b75', swatchColor: '#e83b75', ink: 'light' },
 ]
 
 export function themeStyle(colorHex) {
