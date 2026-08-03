@@ -1,7 +1,7 @@
 from flask import Blueprint, jsonify, request
 from flask_login import current_user, login_required
 
-from helpers import find_user_by_username, issue_setup_token
+from helpers import THEME_COLORS, find_user_by_username, issue_setup_token
 from models import AppSettings, User, db
 
 admin_bp = Blueprint("admin", __name__, url_prefix="/api")
@@ -123,8 +123,13 @@ def update_user(user_id):
     if not new_list_name:
         return jsonify({"error": "Wishlist name can't be empty"}), 400
 
+    theme_color = data.get("theme_color", user.theme_color)
+    if theme_color is not None and theme_color not in THEME_COLORS:
+        return jsonify({"error": "Invalid theme color"}), 400
+
     user.username = new_username
     user.list_name = new_list_name
     user.show_in_directory = data.get("show_in_directory", user.show_in_directory)
+    user.theme_color = theme_color
     db.session.commit()
     return jsonify(user.to_dict())

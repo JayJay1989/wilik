@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { PencilIcon, TrashIcon, SpinnerIcon } from '../components/Icons'
+import { THEME_PRESETS } from '../themePresets'
 
 const API_BASE = '/api'
 
@@ -23,6 +24,7 @@ function AdminPage({ currentUser, appName, onAppNameChange }) {
   const [editUsername, setEditUsername] = useState('')
   const [editListName, setEditListName] = useState('')
   const [editShowInDirectory, setEditShowInDirectory] = useState(true)
+  const [editThemeColor, setEditThemeColor] = useState(null)
   const [editResetPasswordless, setEditResetPasswordless] = useState(false)
   const [editError, setEditError] = useState(null)
   const [publicDirectoryEnabled, setPublicDirectoryEnabled] = useState(true)
@@ -153,6 +155,7 @@ function AdminPage({ currentUser, appName, onAppNameChange }) {
     setEditUsername(user.username)
     setEditListName(user.list_name)
     setEditShowInDirectory(user.show_in_directory)
+    setEditThemeColor(user.theme_color)
     setEditResetPasswordless(false)
     setEditError(null)
     setResetNotice(null)
@@ -170,6 +173,7 @@ function AdminPage({ currentUser, appName, onAppNameChange }) {
         username: editUsername,
         list_name: editListName,
         show_in_directory: editShowInDirectory,
+        theme_color: editThemeColor,
       }),
     }).then((response) => {
       if (!response.ok) {
@@ -314,6 +318,24 @@ function AdminPage({ currentUser, appName, onAppNameChange }) {
                       onChange={(event) => setEditShowInDirectory(event.target.checked)}
                     />
                     List this wishlist in the browsable directory
+                  </label>
+                  <label>
+                    Theme color
+                    <span className="theme-swatches">
+                      {THEME_PRESETS.map((preset) => (
+                        <button
+                          key={preset.name}
+                          type="button"
+                          className={
+                            preset.value === editThemeColor ? 'theme-swatch theme-swatch--selected' : 'theme-swatch'
+                          }
+                          style={{ backgroundColor: preset.swatchColor }}
+                          title={preset.name}
+                          aria-label={preset.name}
+                          onClick={() => setEditThemeColor(preset.value)}
+                        />
+                      ))}
+                    </span>
                   </label>
                   {editError && <p className="form-error">{editError}</p>}
                   <div className="gift-form__actions">
