@@ -30,9 +30,9 @@ function GiftDirectoryList() {
     <ul className="gift-directory__list gift-directory__list--page">
       {lists.map((list) => (
         <li key={list.share_token}>
-          <Link to={`/list/${list.share_token}`}>
+          <Link to={`/list/${list.share_token}`} style={themeStyle(list.theme_color)}>
             <span className="gift-directory__item-name">{list.list_name}</span>
-            <span className="gift-directory__badge" style={themeStyle(list.theme_color)}>
+            <span className="gift-directory__badge">
               <UserIcon /> {list.username}
             </span>
           </Link>
