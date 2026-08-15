@@ -148,6 +148,9 @@
 }
 
 .wishlist-toolbar__control-value {
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
   display: flex;
   align-items: center;
   gap: 6px;
@@ -156,6 +159,7 @@
   height: 34px;
   padding: 6px 10px;
   border: none;
+  border-radius: 0;
   background: var(--code-bg);
   color: var(--text-h);
   cursor: pointer;
