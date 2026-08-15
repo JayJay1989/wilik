@@ -37,3 +37,11 @@ export function sortGifts(items) {
 
   return result
 }
+
+export function sortGiftsByPrice(items) {
+  return [...items].sort((a, b) => {
+    if (a.price == null) return 1
+    if (b.price == null) return -1
+    return a.price - b.price
+  })
+}

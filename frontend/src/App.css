@@ -114,6 +114,116 @@
   color: var(--text-h);
 }
 
+.wishlist-toolbar__controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  max-width: 700px;
+  margin: 0 auto 16px;
+}
+
+.wishlist-toolbar__control {
+  display: flex;
+  align-items: stretch;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.wishlist-toolbar__control-label {
+  display: flex;
+  align-items: center;
+  padding: 0 10px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: var(--text);
+  background: var(--border);
+  white-space: nowrap;
+}
+
+.wishlist-toolbar__control select {
+  font: inherit;
+  font-size: 14px;
+  height: 34px;
+  padding: 6px 10px;
+  border: none;
+  background: var(--code-bg);
+  color: var(--text-h);
+  box-sizing: border-box;
+}
+
+.wishlist-toolbar__control select:focus {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}
+
+.wishlist-toolbar__dropdown {
+  position: relative;
+}
+
+.wishlist-toolbar__control-value {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font: inherit;
+  font-size: 14px;
+  height: 34px;
+  padding: 6px 10px;
+  border: none;
+  background: var(--code-bg);
+  color: var(--text-h);
+  cursor: pointer;
+  max-width: 140px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.wishlist-toolbar__control-caret {
+  flex: none;
+  width: 0;
+  height: 0;
+  margin-top: 2px;
+  border-left: 4px solid transparent;
+  border-right: 4px solid transparent;
+  border-top: 5px solid var(--text);
+}
+
+.wishlist-toolbar__popover {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 160px;
+  max-height: 240px;
+  overflow-y: auto;
+  padding: 6px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--code-bg);
+  box-shadow: var(--shadow);
+}
+
+.wishlist-toolbar__popover-option {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  border-radius: 5px;
+  font-size: 14px;
+  color: var(--text-h);
+  cursor: pointer;
+}
+
+.wishlist-toolbar__popover-option:hover {
+  background: var(--border);
+}
+
 .gift-grid {
   display: flex;
   flex-direction: column;
@@ -621,6 +731,7 @@ button:hover {
   align-items: center;
   gap: 8px;
   margin: 0 0 8px;
+  color: var(--text-h);
 }
 
 .inline-field {
@@ -660,6 +771,26 @@ button:hover {
   gap: 4px;
   font-size: 13px;
   color: var(--text);
+}
+
+.gift-form h3,
+.user-admin__edit-panel h3 {
+  margin: 28px 0 12px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+  font-family: var(--sans);
+  font-size: 13px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text);
+}
+
+.gift-form h3:first-child,
+.user-admin__edit-panel h3:first-child {
+  margin-top: 0;
+  padding-top: 0;
+  border-top: none;
 }
 
 .gift-form .required {
@@ -734,8 +865,78 @@ button:hover {
 }
 
 .form-success {
+  display: inline-flex;
+  align-self: flex-start;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+  padding: 5px 12px;
+  border-radius: 999px;
+  background: rgba(52, 211, 153, 0.15);
+  color: #34d399;
   font-size: 13px;
-  color: #16a34a;
+  font-weight: 600;
+}
+
+.form-success:not(.form-success--panel) {
+  animation: form-success-fade 2s ease forwards;
+}
+
+@keyframes form-success-fade {
+  0%,
+  75% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+.form-success__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  flex: none;
+  border-radius: 50%;
+  background: #34d399;
+  color: #08060d;
+}
+
+.form-success__icon svg {
+  width: 11px;
+  height: 11px;
+}
+
+.form-success--panel {
+  position: relative;
+  display: block;
+  align-self: stretch;
+  padding: 12px 40px 12px 12px;
+  border: 1px solid rgba(52, 211, 153, 0.4);
+  border-radius: 10px;
+  background: rgba(52, 211, 153, 0.15);
+  color: var(--text-h);
+  font-weight: 400;
+}
+
+.form-success__dismiss {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 24px;
+  height: 24px;
+}
+
+.form-success__dismiss svg {
+  width: 16px;
+  height: 16px;
+}
+
+.form-success--panel p {
+  margin: 0 0 8px;
+  color: var(--text-h);
 }
 
 .login-page {
@@ -903,12 +1104,6 @@ button:hover {
   font-weight: 700;
 }
 
-.page h3 {
-  margin: 24px 0 8px;
-  font-size: 14px;
-  color: var(--text-h);
-}
-
 .user-admin__list {
   list-style: none;
   margin: 0;
@@ -956,7 +1151,8 @@ button:hover {
   color: var(--text);
 }
 
-.user-admin__edit-panel input {
+.user-admin__edit-panel input,
+.user-admin__edit-panel select {
   font: inherit;
   font-size: 14px;
   padding: 6px 10px;

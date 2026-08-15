@@ -58,6 +58,15 @@ def update_account():
         "show_background_pattern", current_user.show_background_pattern
     )
     current_user.show_in_directory = data.get("show_in_directory", current_user.show_in_directory)
+    current_user.guest_sort_by_price_enabled = data.get(
+        "guest_sort_by_price_enabled", current_user.guest_sort_by_price_enabled
+    )
+    current_user.guest_filter_by_label_enabled = data.get(
+        "guest_filter_by_label_enabled", current_user.guest_filter_by_label_enabled
+    )
+    current_user.guest_filter_by_brand_enabled = data.get(
+        "guest_filter_by_brand_enabled", current_user.guest_filter_by_brand_enabled
+    )
     db.session.commit()
     return jsonify(current_user.to_dict())
 

@@ -1,7 +1,14 @@
 from flask import Blueprint, jsonify, request
 from flask_login import current_user, login_required
 
-from helpers import THEME_COLORS, find_user_by_username, issue_setup_token
+from helpers import (
+    COLOR_SCHEME_OPTIONS,
+    CURRENCY_OPTIONS,
+    DECIMAL_SEPARATOR_OPTIONS,
+    THEME_COLORS,
+    find_user_by_username,
+    issue_setup_token,
+)
 from models import AppSettings, User, db
 
 admin_bp = Blueprint("admin", __name__, url_prefix="/api")
@@ -27,6 +34,10 @@ def update_settings():
         settings.app_name = app_name
     if "public_directory_enabled" in data:
         settings.public_directory_enabled = bool(data["public_directory_enabled"])
+    if "default_color_scheme" in data:
+        if data["default_color_scheme"] not in COLOR_SCHEME_OPTIONS:
+            return jsonify({"error": "Invalid color scheme"}), 400
+        settings.default_color_scheme = data["default_color_scheme"]
     db.session.commit()
     return jsonify(settings.to_dict())
 
@@ -127,9 +138,30 @@ def update_user(user_id):
     if theme_color is not None and theme_color not in THEME_COLORS:
         return jsonify({"error": "Invalid theme color"}), 400
 
+    currency = data.get("currency", user.currency)
+    if currency not in CURRENCY_OPTIONS:
+        return jsonify({"error": "Invalid currency"}), 400
+
+    decimal_separator = data.get("decimal_separator", user.decimal_separator)
+    if decimal_separator not in DECIMAL_SEPARATOR_OPTIONS:
+        return jsonify({"error": "Invalid decimal separator"}), 400
+
     user.username = new_username
     user.list_name = new_list_name
     user.show_in_directory = data.get("show_in_directory", user.show_in_directory)
     user.theme_color = theme_color
+    user.currency = currency
+    user.decimal_separator = decimal_separator
+    user.show_image_placeholder = data.get("show_image_placeholder", user.show_image_placeholder)
+    user.show_background_pattern = data.get("show_background_pattern", user.show_background_pattern)
+    user.guest_sort_by_price_enabled = data.get(
+        "guest_sort_by_price_enabled", user.guest_sort_by_price_enabled
+    )
+    user.guest_filter_by_label_enabled = data.get(
+        "guest_filter_by_label_enabled", user.guest_filter_by_label_enabled
+    )
+    user.guest_filter_by_brand_enabled = data.get(
+        "guest_filter_by_brand_enabled", user.guest_filter_by_brand_enabled
+    )
     db.session.commit()
     return jsonify(user.to_dict())

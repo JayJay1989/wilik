@@ -11,9 +11,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Wilik</title>
     <script>
-      // set before first paint so there's no flash of the wrong theme;
-      // kept in sync with src/colorScheme.js
-      document.documentElement.dataset.theme = localStorage.getItem('wilik-color-scheme') || 'dark'
+      // set before first paint so there's no flash of the wrong theme; kept in sync with
+      // src/colorScheme.js. The "-default" key is the admin's instance-wide default, cached
+      // here the first time this browser fetches /api/settings (see App.jsx) -- a brand new
+      // browser's very first-ever pageview still briefly uses the hardcoded 'dark' fallback.
+      document.documentElement.dataset.theme =
+        localStorage.getItem('wilik-color-scheme') || localStorage.getItem('wilik-color-scheme-default') || 'dark'
     </script>
   </head>
   <body>

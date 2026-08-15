@@ -1,9 +1,8 @@
 import { useState, useEffect } from 'react'
 import StarRating from './StarRating'
+import { CURRENCY_OPTIONS } from '../formOptions'
 
 const API_BASE = '/api'
-
-const CURRENCY_OPTIONS = ['€', '$', '£', '']
 
 function GiftForm({ initialValues, defaultCurrency, onSubmit, onCancel }) {
   const [values, setValues] = useState({
@@ -156,10 +155,11 @@ function GiftForm({ initialValues, defaultCurrency, onSubmit, onCancel }) {
           Currency
           <select name="currency" value={values.currency} onChange={handleChange}>
             <option value="__default__">Default ({defaultCurrency || 'no symbol'})</option>
-            <option value="€">€ Euro</option>
-            <option value="$">$ Dollar</option>
-            <option value="£">£ Pound</option>
-            <option value="">No currency</option>
+            {CURRENCY_OPTIONS.map((option) => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
           </select>
         </label>
         <label>

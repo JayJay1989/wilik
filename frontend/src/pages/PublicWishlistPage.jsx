@@ -1,18 +1,77 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import Logo from '../components/Logo'
 import PublicGiftCard from '../components/PublicGiftCard'
 import { GiftIcon, SparkleIcon } from '../components/Icons'
-import { sortGifts } from '../sortGifts'
+import { sortGifts, sortGiftsByPrice } from '../sortGifts'
 import { themeStyle } from '../themePresets'
 
 const API_BASE = '/api'
+
+function uniqueValues(items, field) {
+  return [...new Set(items.map((item) => item[field]).filter((value) => value))].sort((a, b) =>
+    a.localeCompare(b)
+  )
+}
+
+// compact input-group-style control: a "Label"/"Brand" prefix + a button that opens a
+// checkbox popover, so picking several values doesn't grow into a long row of chips
+function MultiSelectFilter({ label, options, selected, onToggle }) {
+  const [open, setOpen] = useState(false)
+  const containerRef = useRef(null)
+
+  useEffect(() => {
+    if (!open) return
+    function handleClickOutside(event) {
+      if (containerRef.current && !containerRef.current.contains(event.target)) setOpen(false)
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [open])
+
+  const summary = selected.length === 0 ? 'All' : selected.length === 1 ? selected[0] : `${selected.length} selected`
+
+  return (
+    <div className="wishlist-toolbar__dropdown" ref={containerRef}>
+      <div className="wishlist-toolbar__control">
+        <span className="wishlist-toolbar__control-label">{label}</span>
+        <button
+          type="button"
+          className="wishlist-toolbar__control-value"
+          aria-haspopup="true"
+          aria-expanded={open}
+          onClick={() => setOpen((current) => !current)}
+        >
+          {summary}
+          <span className="wishlist-toolbar__control-caret" />
+        </button>
+      </div>
+      {open && (
+        <div className="wishlist-toolbar__popover">
+          {options.map((option) => (
+            <label key={option} className="wishlist-toolbar__popover-option">
+              <input type="checkbox" checked={selected.includes(option)} onChange={() => onToggle(option)} />
+              {option}
+            </label>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
 
 function PublicWishlistPage({ appName }) {
   const { token } = useParams()
   const [owner, setOwner] = useState(undefined) // undefined = loading, null = invalid link
   const [items, setItems] = useState([])
   const [isLoggedIn, setIsLoggedIn] = useState(false)
+  const [sortBy, setSortBy] = useState('recommended')
+  const [labelFilters, setLabelFilters] = useState([])
+  const [brandFilters, setBrandFilters] = useState([])
+
+  function toggleFilter(setFilters, value) {
+    setFilters((current) => (current.includes(value) ? current.filter((v) => v !== value) : [...current, value]))
+  }
 
   useEffect(() => {
     fetch(`${API_BASE}/public/${token}`)
@@ -137,7 +196,21 @@ function PublicWishlistPage({ appName }) {
     )
   }
 
-  const sorted = sortGifts(items)
+  const labelOptions = owner.guest_filter_by_label_enabled ? uniqueValues(items, 'label') : []
+  const brandOptions = owner.guest_filter_by_brand_enabled ? uniqueValues(items, 'brand') : []
+  const showLabelFilter = labelOptions.length >= 2
+  const showBrandFilter = brandOptions.length >= 2
+  // rating-based sorting is always on (see sortGifts.js) and always keeps the owner's
+  // manual order within a star tier, so the dropdown only needs to appear when there's an
+  // actual alternative to offer
+  const showSortControl = owner.guest_sort_by_price_enabled
+  const showToolbarControls = showSortControl || showLabelFilter || showBrandFilter
+
+  const filtered = items
+    .filter((item) => labelFilters.length === 0 || labelFilters.includes(item.label))
+    .filter((item) => brandFilters.length === 0 || brandFilters.includes(item.brand))
+
+  const sorted = sortBy === 'price' ? sortGiftsByPrice(filtered) : sortGifts(filtered)
 
   return (
     <div className="app" style={themeStyle(owner.theme_color)}>
@@ -161,13 +234,59 @@ function PublicWishlistPage({ appName }) {
       <div className="wishlist-toolbar">
         <h2>{owner.list_name}</h2>
       </div>
+      {showToolbarControls && (
+        <div className="wishlist-toolbar__controls">
+          {showSortControl && (
+            <div className="wishlist-toolbar__control">
+              <span className="wishlist-toolbar__control-label">Sort</span>
+              <select value={sortBy} onChange={(event) => setSortBy(event.target.value)} aria-label="Sort by">
+                <option value="recommended">Highest rated</option>
+                <option value="price">Lowest price</option>
+              </select>
+            </div>
+          )}
+          {showLabelFilter && (
+            <MultiSelectFilter
+              label="Label"
+              options={labelOptions}
+              selected={labelFilters}
+              onToggle={(value) => toggleFilter(setLabelFilters, value)}
+            />
+          )}
+          {showBrandFilter && (
+            <MultiSelectFilter
+              label="Brand"
+              options={brandOptions}
+              selected={brandFilters}
+              onToggle={(value) => toggleFilter(setBrandFilters, value)}
+            />
+          )}
+        </div>
+      )}
       <main>
         <div className="gift-grid">
-          {sorted.length === 0 && (
+          {sorted.length === 0 && items.length > 0 && (
+            <div className="empty-state">
+              <SparkleIcon />
+              <h3>No items match your filters</h3>
+              <p>Try a different label or brand</p>
+              <button
+                type="button"
+                className="btn-primary"
+                onClick={() => {
+                  setLabelFilters([])
+                  setBrandFilters([])
+                }}
+              >
+                Clear filters
+              </button>
+            </div>
+          )}
+          {items.length === 0 && (
             <div className="empty-state">
               <SparkleIcon />
               <h3>This wishlist is empty</h3>
-              <p>Nothing has been added yet — check back later</p>
+              <p>Nothing has been added yet, check back later</p>
             </div>
           )}
           {sorted.map((item) => (

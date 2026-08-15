@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
-import { PencilIcon, TrashIcon, SpinnerIcon } from '../components/Icons'
+import { PencilIcon, TrashIcon, SpinnerIcon, CheckIcon, CloseIcon } from '../components/Icons'
 import { THEME_PRESETS } from '../themePresets'
+import { CURRENCY_OPTIONS, DECIMAL_SEPARATOR_OPTIONS } from '../formOptions'
 
 const API_BASE = '/api'
 
@@ -9,6 +10,7 @@ function AdminPage({ currentUser, appName, onAppNameChange }) {
   const [users, setUsers] = useState([])
   const [appNameInput, setAppNameInput] = useState(appName)
   const [appNameError, setAppNameError] = useState(null)
+  const [appNameSaved, setAppNameSaved] = useState(false)
   const [username, setUsername] = useState('')
   const [isAdmin, setIsAdmin] = useState(false)
   const [passwordless, setPasswordless] = useState(false)
@@ -25,10 +27,22 @@ function AdminPage({ currentUser, appName, onAppNameChange }) {
   const [editListName, setEditListName] = useState('')
   const [editShowInDirectory, setEditShowInDirectory] = useState(true)
   const [editThemeColor, setEditThemeColor] = useState(null)
+  const [editCurrency, setEditCurrency] = useState('€')
+  const [editDecimalSeparator, setEditDecimalSeparator] = useState(',')
+  const [editShowImagePlaceholder, setEditShowImagePlaceholder] = useState(true)
+  const [editShowBackgroundPattern, setEditShowBackgroundPattern] = useState(true)
+  const [editGuestSortByPrice, setEditGuestSortByPrice] = useState(false)
+  const [editGuestFilterByLabel, setEditGuestFilterByLabel] = useState(false)
+  const [editGuestFilterByBrand, setEditGuestFilterByBrand] = useState(false)
   const [editResetPasswordless, setEditResetPasswordless] = useState(false)
   const [editError, setEditError] = useState(null)
+  const [editSaved, setEditSaved] = useState(false)
   const [publicDirectoryEnabled, setPublicDirectoryEnabled] = useState(true)
   const [directoryError, setDirectoryError] = useState(null)
+  const [directorySaved, setDirectorySaved] = useState(false)
+  const [defaultColorScheme, setDefaultColorScheme] = useState('dark')
+  const [defaultColorSchemeError, setDefaultColorSchemeError] = useState(null)
+  const [defaultColorSchemeSaved, setDefaultColorSchemeSaved] = useState(false)
 
   useEffect(() => {
     fetch(`${API_BASE}/users`, { credentials: 'include' })
@@ -39,12 +53,16 @@ function AdminPage({ currentUser, appName, onAppNameChange }) {
   useEffect(() => {
     fetch(`${API_BASE}/settings`)
       .then((response) => response.json())
-      .then((data) => setPublicDirectoryEnabled(data.public_directory_enabled))
+      .then((data) => {
+        setPublicDirectoryEnabled(data.public_directory_enabled)
+        setDefaultColorScheme(data.default_color_scheme)
+      })
   }, [])
 
   function handleAppNameSubmit(event) {
     event.preventDefault()
     setAppNameError(null)
+    setAppNameSaved(false)
     fetch(`${API_BASE}/settings`, {
       method: 'PUT',
       credentials: 'include',
@@ -55,13 +73,18 @@ function AdminPage({ currentUser, appName, onAppNameChange }) {
         response.json().then((data) => setAppNameError(data.error))
         return
       }
-      response.json().then((data) => onAppNameChange(data.app_name))
+      response.json().then((data) => {
+        onAppNameChange(data.app_name)
+        setAppNameSaved(true)
+        setTimeout(() => setAppNameSaved(false), 2000)
+      })
     })
   }
 
   function handleDirectorySubmit(event) {
     event.preventDefault()
     setDirectoryError(null)
+    setDirectorySaved(false)
     fetch(`${API_BASE}/settings`, {
       method: 'PUT',
       credentials: 'include',
@@ -70,7 +93,29 @@ function AdminPage({ currentUser, appName, onAppNameChange }) {
     }).then((response) => {
       if (!response.ok) {
         response.json().then((data) => setDirectoryError(data.error))
+        return
       }
+      setDirectorySaved(true)
+      setTimeout(() => setDirectorySaved(false), 2000)
+    })
+  }
+
+  function handleDefaultColorSchemeSubmit(event) {
+    event.preventDefault()
+    setDefaultColorSchemeError(null)
+    setDefaultColorSchemeSaved(false)
+    fetch(`${API_BASE}/settings`, {
+      method: 'PUT',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ default_color_scheme: defaultColorScheme }),
+    }).then((response) => {
+      if (!response.ok) {
+        response.json().then((data) => setDefaultColorSchemeError(data.error))
+        return
+      }
+      setDefaultColorSchemeSaved(true)
+      setTimeout(() => setDefaultColorSchemeSaved(false), 2000)
     })
   }
 
@@ -156,8 +201,16 @@ function AdminPage({ currentUser, appName, onAppNameChange }) {
     setEditListName(user.list_name)
     setEditShowInDirectory(user.show_in_directory)
     setEditThemeColor(user.theme_color)
+    setEditCurrency(user.currency)
+    setEditDecimalSeparator(user.decimal_separator)
+    setEditShowImagePlaceholder(user.show_image_placeholder)
+    setEditShowBackgroundPattern(user.show_background_pattern)
+    setEditGuestSortByPrice(user.guest_sort_by_price_enabled)
+    setEditGuestFilterByLabel(user.guest_filter_by_label_enabled)
+    setEditGuestFilterByBrand(user.guest_filter_by_brand_enabled)
     setEditResetPasswordless(false)
     setEditError(null)
+    setEditSaved(false)
     setResetNotice(null)
     setResetSetupLink(null)
   }
@@ -165,6 +218,7 @@ function AdminPage({ currentUser, appName, onAppNameChange }) {
   function handleEditSubmit(event, user) {
     event.preventDefault()
     setEditError(null)
+    setEditSaved(false)
     fetch(`${API_BASE}/users/${user.id}`, {
       method: 'PUT',
       credentials: 'include',
@@ -174,6 +228,13 @@ function AdminPage({ currentUser, appName, onAppNameChange }) {
         list_name: editListName,
         show_in_directory: editShowInDirectory,
         theme_color: editThemeColor,
+        currency: editCurrency,
+        decimal_separator: editDecimalSeparator,
+        show_image_placeholder: editShowImagePlaceholder,
+        show_background_pattern: editShowBackgroundPattern,
+        guest_sort_by_price_enabled: editGuestSortByPrice,
+        guest_filter_by_label_enabled: editGuestFilterByLabel,
+        guest_filter_by_brand_enabled: editGuestFilterByBrand,
       }),
     }).then((response) => {
       if (!response.ok) {
@@ -182,7 +243,8 @@ function AdminPage({ currentUser, appName, onAppNameChange }) {
       }
       response.json().then((updatedUser) => {
         setUsers((current) => current.map((u) => (u.id === updatedUser.id ? updatedUser : u)))
-        setEditingUserId(null)
+        setEditSaved(true)
+        setTimeout(() => setEditSaved(false), 2000)
       })
     })
   }
@@ -193,22 +255,6 @@ function AdminPage({ currentUser, appName, onAppNameChange }) {
         ← Back to wishlist
       </Link>
       <h2>Admin panel</h2>
-
-      <h3>Gift directory</h3>
-      <form className="gift-form" onSubmit={handleDirectorySubmit}>
-        <label className="user-admin__checkbox">
-          <input
-            type="checkbox"
-            checked={publicDirectoryEnabled}
-            onChange={(event) => setPublicDirectoryEnabled(event.target.checked)}
-          />
-          Show a directory of public wishlists on the login page
-        </label>
-        {directoryError && <p className="form-error">{directoryError}</p>}
-        <div className="gift-form__actions">
-          <button type="submit">Save</button>
-        </div>
-      </form>
 
       <h3>Users</h3>
       <div className="card">
@@ -247,15 +293,16 @@ function AdminPage({ currentUser, appName, onAppNameChange }) {
               {editingUserId === user.id && (
                 <form className="user-admin__edit-panel" onSubmit={(event) => handleEditSubmit(event, user)}>
                   {user.id !== currentUser.id && (
-                    <label>
-                      Password
+                    <>
+                      <h3>Password</h3>
                       <label className="user-admin__checkbox">
                         <input
                           type="checkbox"
                           checked={editResetPasswordless}
                           onChange={(event) => setEditResetPasswordless(event.target.checked)}
                         />
-                        Allow first login with just a username, no setup link (not recommended)
+                        Reset password without a setup link, allow first login with just a username (not
+                        recommended)
                       </label>
                       <div className="gift-form__actions">
                         <button type="button" className="btn-primary" onClick={() => handleResetPassword(user)}>
@@ -263,7 +310,15 @@ function AdminPage({ currentUser, appName, onAppNameChange }) {
                         </button>
                       </div>
                       {resetSetupLink && (
-                        <div className="form-success">
+                        <div className="form-success form-success--panel">
+                          <button
+                            type="button"
+                            className="icon-button form-success__dismiss"
+                            aria-label="Dismiss"
+                            onClick={() => setResetSetupLink(null)}
+                          >
+                            <CloseIcon />
+                          </button>
                           <p>{resetSetupLink.username} can't log in until they use this one-time setup link:</p>
                           <div className="inline-field">
                             <input
@@ -282,18 +337,34 @@ function AdminPage({ currentUser, appName, onAppNameChange }) {
                           </div>
                         </div>
                       )}
-                      {resetNotice && <p className="form-success">{resetNotice}</p>}
-                    </label>
+                      {resetNotice && (
+                        <p className="form-success form-success--panel">
+                          <button
+                            type="button"
+                            className="icon-button form-success__dismiss"
+                            aria-label="Dismiss"
+                            onClick={() => setResetNotice(null)}
+                          >
+                            <CloseIcon />
+                          </button>
+                          {resetNotice}
+                        </p>
+                      )}
+                    </>
                   )}
+
+                  <h3>Username</h3>
                   <label>
                     Username
                     <input
                       value={editUsername}
                       onChange={(event) => setEditUsername(event.target.value)}
                       required
-                      autoFocus
+                      autoFocus={user.id === currentUser.id}
                     />
                   </label>
+
+                  <h3>General</h3>
                   <label>
                     Wishlist name
                     <input
@@ -302,6 +373,31 @@ function AdminPage({ currentUser, appName, onAppNameChange }) {
                       required
                     />
                   </label>
+                  <div className="gift-form__row">
+                    <label>
+                      Currency
+                      <select value={editCurrency} onChange={(event) => setEditCurrency(event.target.value)}>
+                        {CURRENCY_OPTIONS.map((option) => (
+                          <option key={option.value} value={option.value}>
+                            {option.label}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                    <label>
+                      Decimals
+                      <select
+                        value={editDecimalSeparator}
+                        onChange={(event) => setEditDecimalSeparator(event.target.value)}
+                      >
+                        {DECIMAL_SEPARATOR_OPTIONS.map((option) => (
+                          <option key={option.value} value={option.value}>
+                            {option.label}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                  </div>
                   <label className="user-admin__checkbox">
                     <input
                       type="checkbox"
@@ -310,6 +406,8 @@ function AdminPage({ currentUser, appName, onAppNameChange }) {
                     />
                     List this wishlist in the browsable directory
                   </label>
+
+                  <h3>Appearance</h3>
                   <label>
                     Theme color
                     <span className="theme-swatches">
@@ -328,12 +426,63 @@ function AdminPage({ currentUser, appName, onAppNameChange }) {
                       ))}
                     </span>
                   </label>
+                  <label className="user-admin__checkbox">
+                    <input
+                      type="checkbox"
+                      checked={editShowImagePlaceholder}
+                      onChange={(event) => setEditShowImagePlaceholder(event.target.checked)}
+                    />
+                    Show a placeholder image for items without a photo
+                  </label>
+                  <label className="user-admin__checkbox">
+                    <input
+                      type="checkbox"
+                      checked={editShowBackgroundPattern}
+                      onChange={(event) => setEditShowBackgroundPattern(event.target.checked)}
+                    />
+                    Show a subtle background pattern on gift cards
+                  </label>
+
+                  <h3>Guest sorting &amp; filtering</h3>
+                  <label className="user-admin__checkbox">
+                    <input
+                      type="checkbox"
+                      checked={editGuestSortByPrice}
+                      onChange={(event) => setEditGuestSortByPrice(event.target.checked)}
+                    />
+                    Let guests also sort by price
+                  </label>
+                  <label className="user-admin__checkbox">
+                    <input
+                      type="checkbox"
+                      checked={editGuestFilterByLabel}
+                      onChange={(event) => setEditGuestFilterByLabel(event.target.checked)}
+                    />
+                    Let guests filter by label
+                  </label>
+                  <label className="user-admin__checkbox">
+                    <input
+                      type="checkbox"
+                      checked={editGuestFilterByBrand}
+                      onChange={(event) => setEditGuestFilterByBrand(event.target.checked)}
+                    />
+                    Let guests filter by brand
+                  </label>
+
                   {editError && <p className="form-error">{editError}</p>}
                   <div className="gift-form__actions">
                     <button type="submit">Save</button>
                     <button type="button" onClick={() => setEditingUserId(null)}>
                       Cancel
                     </button>
+                    {editSaved && (
+                      <p className="form-success">
+                        <span className="form-success__icon">
+                          <CheckIcon />
+                        </span>
+                        Saved
+                      </p>
+                    )}
                   </div>
                 </form>
               )}
@@ -361,7 +510,15 @@ function AdminPage({ currentUser, appName, onAppNameChange }) {
         </label>
         {userError && <p className="form-error">{userError}</p>}
         {createSetupLink && (
-          <div className="form-success">
+          <div className="form-success form-success--panel">
+            <button
+              type="button"
+              className="icon-button form-success__dismiss"
+              aria-label="Dismiss"
+              onClick={() => setCreateSetupLink(null)}
+            >
+              <CloseIcon />
+            </button>
             <p>{createSetupLink.username} can't log in yet. Send them this one-time setup link:</p>
             <div className="inline-field">
               <input
@@ -380,7 +537,19 @@ function AdminPage({ currentUser, appName, onAppNameChange }) {
             </div>
           </div>
         )}
-        {createNotice && <p className="form-success">{createNotice}</p>}
+        {createNotice && (
+          <p className="form-success form-success--panel">
+            <button
+              type="button"
+              className="icon-button form-success__dismiss"
+              aria-label="Dismiss"
+              onClick={() => setCreateNotice(null)}
+            >
+              <CloseIcon />
+            </button>
+            {createNotice}
+          </p>
+        )}
         <div className="gift-form__actions">
           <button type="submit" disabled={creatingUser}>
             {creatingUser ? (
@@ -394,12 +563,68 @@ function AdminPage({ currentUser, appName, onAppNameChange }) {
         </div>
       </form>
 
+      <h3>Gift directory</h3>
+      <form className="gift-form" onSubmit={handleDirectorySubmit}>
+        <label className="user-admin__checkbox">
+          <input
+            type="checkbox"
+            checked={publicDirectoryEnabled}
+            onChange={(event) => setPublicDirectoryEnabled(event.target.checked)}
+          />
+          Show a directory of public wishlists on the login page
+        </label>
+        {directoryError && <p className="form-error">{directoryError}</p>}
+        <div className="gift-form__actions">
+          <button type="submit">Save</button>
+          {directorySaved && (
+            <p className="form-success">
+              <span className="form-success__icon">
+                <CheckIcon />
+              </span>
+              Saved
+            </p>
+          )}
+        </div>
+      </form>
+
       <h3>App name</h3>
       <form className="gift-form" onSubmit={handleAppNameSubmit}>
         <input value={appNameInput} onChange={(event) => setAppNameInput(event.target.value)} required />
         {appNameError && <p className="form-error">{appNameError}</p>}
         <div className="gift-form__actions">
           <button type="submit">Change app name</button>
+          {appNameSaved && (
+            <p className="form-success">
+              <span className="form-success__icon">
+                <CheckIcon />
+              </span>
+              Saved
+            </p>
+          )}
+        </div>
+      </form>
+
+      <h3>Default theme</h3>
+      <form className="gift-form" onSubmit={handleDefaultColorSchemeSubmit}>
+        <p className="page__hint" style={{ margin: '0 0 4px' }}>
+          Default look for anyone without their own preference set, including wishlist visitors
+        </p>
+        <select value={defaultColorScheme} onChange={(event) => setDefaultColorScheme(event.target.value)}>
+          <option value="dark">Dark</option>
+          <option value="light">Light</option>
+          <option value="auto">Match system</option>
+        </select>
+        {defaultColorSchemeError && <p className="form-error">{defaultColorSchemeError}</p>}
+        <div className="gift-form__actions">
+          <button type="submit">Save</button>
+          {defaultColorSchemeSaved && (
+            <p className="form-success">
+              <span className="form-success__icon">
+                <CheckIcon />
+              </span>
+              Saved
+            </p>
+          )}
         </div>
       </form>
     </div>

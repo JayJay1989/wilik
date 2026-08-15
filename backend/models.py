@@ -35,6 +35,13 @@ class User(UserMixin, db.Model):
     allow_passwordless_setup = db.Column(db.Boolean, nullable=False, default=False)
     show_image_placeholder = db.Column(db.Boolean, nullable=False, default=True)
     show_background_pattern = db.Column(db.Boolean, nullable=False, default=True)
+    # per-owner guest sort/filter controls on their public wishlist page, off by default.
+    # Sorting by rating isn't one of these: it's the app's baseline order (see sortGifts.js)
+    # and always preserves the owner's manual drag order within a star tier, so there's no
+    # separate "highest rated" mode to gate -- only the price override needs a toggle.
+    guest_sort_by_price_enabled = db.Column(db.Boolean, nullable=False, default=False)
+    guest_filter_by_label_enabled = db.Column(db.Boolean, nullable=False, default=False)
+    guest_filter_by_brand_enabled = db.Column(db.Boolean, nullable=False, default=False)
     # unguessable token for the public, no-login wishlist link; anyone with it can view + claim items
     share_token = db.Column(db.String(64), unique=True, nullable=False, default=generate_share_token)
     # opt-out of the public directory (see AppSettings.public_directory_enabled) -- the
@@ -71,6 +78,9 @@ class User(UserMixin, db.Model):
             "show_background_pattern": self.show_background_pattern,
             "share_token": self.share_token,
             "show_in_directory": self.show_in_directory,
+            "guest_sort_by_price_enabled": self.guest_sort_by_price_enabled,
+            "guest_filter_by_label_enabled": self.guest_filter_by_label_enabled,
+            "guest_filter_by_brand_enabled": self.guest_filter_by_brand_enabled,
         }
 
     def public_dict(self):
@@ -80,6 +90,9 @@ class User(UserMixin, db.Model):
             "decimal_separator": self.decimal_separator,
             "theme_color": self.theme_color,
             "show_background_pattern": self.show_background_pattern,
+            "guest_sort_by_price_enabled": self.guest_sort_by_price_enabled,
+            "guest_filter_by_label_enabled": self.guest_filter_by_label_enabled,
+            "guest_filter_by_brand_enabled": self.guest_filter_by_brand_enabled,
         }
 
 
@@ -88,9 +101,16 @@ class AppSettings(db.Model):
     app_name = db.Column(db.String(80), nullable=False, default="Wilik")
     # shows a directory of every wishlist on the login page, so visitors can find one without a share link
     public_directory_enabled = db.Column(db.Boolean, nullable=False, default=True)
+    # fallback dark/light/auto for anyone who hasn't picked their own in Settings yet (stored
+    # per-browser in localStorage, see colorScheme.js) -- "dark" matches the app's historical default
+    default_color_scheme = db.Column(db.String(10), nullable=False, default="dark")
 
     def to_dict(self):
-        return {"app_name": self.app_name, "public_directory_enabled": self.public_directory_enabled}
+        return {
+            "app_name": self.app_name,
+            "public_directory_enabled": self.public_directory_enabled,
+            "default_color_scheme": self.default_color_scheme,
+        }
 
 
 class Gift(db.Model):

@@ -14,6 +14,7 @@ import GiftDirectoryPage from './pages/GiftDirectoryPage'
 import WishlistChooserPage from './pages/WishlistChooserPage'
 import WishlistBrowsePage from './pages/WishlistBrowsePage'
 import { themeStyle } from './themePresets'
+import { cacheDefaultColorScheme } from './colorScheme'
 import './App.css'
 
 const API_BASE = '/api'
@@ -127,7 +128,10 @@ function App() {
   useEffect(() => {
     fetch(`${API_BASE}/settings`)
       .then((response) => response.json())
-      .then((data) => setAppName(data.app_name))
+      .then((data) => {
+        setAppName(data.app_name)
+        cacheDefaultColorScheme(data.default_color_scheme)
+      })
   }, [])
 
   useEffect(() => {

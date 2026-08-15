@@ -6,6 +6,7 @@ from models import User, db
 CURRENCY_OPTIONS = ["€", "$", "£", ""]
 DECIMAL_SEPARATOR_OPTIONS = [",", ".", "round"]
 THEME_COLORS = ["#5b5fef", "#d4a017", "#d2601a", "#e83b75"]
+COLOR_SCHEME_OPTIONS = ["dark", "light", "auto"]
 
 SETUP_TOKEN_VALID_DAYS = 7
 

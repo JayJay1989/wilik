@@ -2,6 +2,8 @@ import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { THEME_PRESETS } from '../themePresets'
 import { getColorScheme, setColorScheme } from '../colorScheme'
+import { CURRENCY_OPTIONS, DECIMAL_SEPARATOR_OPTIONS } from '../formOptions'
+import { CheckIcon } from '../components/Icons'
 
 const API_BASE = '/api'
 
@@ -67,6 +69,9 @@ function SettingsPage({ currentUser, onUpdate }) {
   const [themeColor, setThemeColor] = useState(currentUser.theme_color)
   const [showImagePlaceholder, setShowImagePlaceholder] = useState(currentUser.show_image_placeholder)
   const [showBackgroundPattern, setShowBackgroundPattern] = useState(currentUser.show_background_pattern)
+  const [guestSortByPrice, setGuestSortByPrice] = useState(currentUser.guest_sort_by_price_enabled)
+  const [guestFilterByLabel, setGuestFilterByLabel] = useState(currentUser.guest_filter_by_label_enabled)
+  const [guestFilterByBrand, setGuestFilterByBrand] = useState(currentUser.guest_filter_by_brand_enabled)
   const [wishlistError, setWishlistError] = useState(null)
   const [wishlistSaved, setWishlistSaved] = useState(false)
 
@@ -87,6 +92,7 @@ function SettingsPage({ currentUser, onUpdate }) {
       response.json().then((updatedUser) => {
         onUpdate(updatedUser)
         setUsernameSaved(true)
+        setTimeout(() => setUsernameSaved(false), 2000)
       })
     })
   }
@@ -112,6 +118,7 @@ function SettingsPage({ currentUser, onUpdate }) {
       setNewPassword('')
       setConfirmPassword('')
       setPasswordSaved(true)
+      setTimeout(() => setPasswordSaved(false), 2000)
     })
   }
 
@@ -130,6 +137,9 @@ function SettingsPage({ currentUser, onUpdate }) {
         theme_color: themeColor,
         show_image_placeholder: showImagePlaceholder,
         show_background_pattern: showBackgroundPattern,
+        guest_sort_by_price_enabled: guestSortByPrice,
+        guest_filter_by_label_enabled: guestFilterByLabel,
+        guest_filter_by_brand_enabled: guestFilterByBrand,
       }),
     }).then((response) => {
       if (!response.ok) {
@@ -139,6 +149,7 @@ function SettingsPage({ currentUser, onUpdate }) {
       response.json().then((updatedUser) => {
         onUpdate(updatedUser)
         setWishlistSaved(true)
+        setTimeout(() => setWishlistSaved(false), 2000)
       })
     })
   }
@@ -148,11 +159,12 @@ function SettingsPage({ currentUser, onUpdate }) {
       <Link className="page__back" to="/">
         ← Back to wishlist
       </Link>
+      <h2>Settings</h2>
 
-      <h2>Share your wishlist</h2>
+      <h3>Share your wishlist</h3>
       <div className="card">
         <p className="page__hint" style={{ margin: '0 0 10px' }}>
-          Anyone with this link can view your list and claim items — you'll never see who claimed what
+          Anyone with this link can view your list and claim items, you'll never see who claimed what
         </p>
         <div className="inline-field">
           <input className="share-link__input" value={shareUrl} readOnly onFocus={(event) => event.target.select()} />
@@ -171,8 +183,9 @@ function SettingsPage({ currentUser, onUpdate }) {
         </label>
       </div>
 
-      <h2>Wishlist settings</h2>
+      <h3>Wishlist settings</h3>
       <form className="gift-form" onSubmit={handleWishlistSubmit}>
+        <h3>General</h3>
         <label>
           List name
           <input value={listName} onChange={(event) => setListName(event.target.value)} required />
@@ -181,21 +194,26 @@ function SettingsPage({ currentUser, onUpdate }) {
           <label>
             Currency
             <select value={currency} onChange={(event) => setCurrency(event.target.value)}>
-              <option value="€">€ Euro</option>
-              <option value="$">$ Dollar</option>
-              <option value="£">£ Pound</option>
-              <option value="">No currency</option>
+              {CURRENCY_OPTIONS.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
             </select>
           </label>
           <label>
             Decimals
             <select value={decimalSeparator} onChange={(event) => setDecimalSeparator(event.target.value)}>
-              <option value=",">, (comma)</option>
-              <option value=".">. (period)</option>
-              <option value="round">Round to whole number</option>
+              {DECIMAL_SEPARATOR_OPTIONS.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
             </select>
           </label>
         </div>
+
+        <h3>Appearance</h3>
         <label>
           Theme color
           <span className="theme-swatches">
@@ -228,14 +246,51 @@ function SettingsPage({ currentUser, onUpdate }) {
           />
           Show a subtle background pattern on gift cards
         </label>
+
+        <h3>Guest sorting &amp; filtering</h3>
+        <p className="page__hint" style={{ margin: '-4px 0 0' }}>
+          Lets guests browsing your list narrow it down themselves, handy for longer lists
+        </p>
+        <label className="user-admin__checkbox">
+          <input
+            type="checkbox"
+            checked={guestSortByPrice}
+            onChange={(event) => setGuestSortByPrice(event.target.checked)}
+          />
+          Let guests also sort by price
+        </label>
+        <label className="user-admin__checkbox">
+          <input
+            type="checkbox"
+            checked={guestFilterByLabel}
+            onChange={(event) => setGuestFilterByLabel(event.target.checked)}
+          />
+          Let guests filter by label
+        </label>
+        <label className="user-admin__checkbox">
+          <input
+            type="checkbox"
+            checked={guestFilterByBrand}
+            onChange={(event) => setGuestFilterByBrand(event.target.checked)}
+          />
+          Let guests filter by brand
+        </label>
+
         {wishlistError && <p className="form-error">{wishlistError}</p>}
-        {wishlistSaved && <p className="form-success">Saved</p>}
         <div className="gift-form__actions">
           <button type="submit">Save</button>
+          {wishlistSaved && (
+            <p className="form-success">
+              <span className="form-success__icon">
+                <CheckIcon />
+              </span>
+              Saved
+            </p>
+          )}
         </div>
       </form>
 
-      <h2>Account settings</h2>
+      <h3>Account settings</h3>
 
       <form className="gift-form" onSubmit={handleUsernameSubmit}>
         <label>
@@ -243,9 +298,16 @@ function SettingsPage({ currentUser, onUpdate }) {
           <input value={username} onChange={(event) => setUsername(event.target.value)} required />
         </label>
         {usernameError && <p className="form-error">{usernameError}</p>}
-        {usernameSaved && <p className="form-success">Saved</p>}
         <div className="gift-form__actions">
           <button type="submit">Change username</button>
+          {usernameSaved && (
+            <p className="form-success">
+              <span className="form-success__icon">
+                <CheckIcon />
+              </span>
+              Saved
+            </p>
+          )}
         </div>
       </form>
 
@@ -271,22 +333,29 @@ function SettingsPage({ currentUser, onUpdate }) {
           />
         </label>
         {passwordError && <p className="form-error">{passwordError}</p>}
-        {passwordSaved && <p className="form-success">Password changed</p>}
         <div className="gift-form__actions">
           <button type="submit">Change password</button>
+          {passwordSaved && (
+            <p className="form-success">
+              <span className="form-success__icon">
+                <CheckIcon />
+              </span>
+              Password changed
+            </p>
+          )}
         </div>
       </form>
 
-      <h2>Appearance</h2>
+      <h3>App theme</h3>
       <div className="gift-form">
-        <label>
-          Color scheme
-          <select value={colorScheme} onChange={handleColorSchemeChange}>
-            <option value="dark">Dark</option>
-            <option value="light">Light</option>
-            <option value="auto">Match system</option>
-          </select>
-        </label>
+        <p className="page__hint" style={{ margin: '0 0 4px' }}>
+          Only changes how the app looks for you (wishlist visitors aren't affected)
+        </p>
+        <select value={colorScheme} onChange={handleColorSchemeChange} aria-label="App theme">
+          <option value="dark">Dark</option>
+          <option value="light">Light</option>
+          <option value="auto">Match system</option>
+        </select>
       </div>
     </div>
   )
