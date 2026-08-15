@@ -60,6 +60,61 @@ function MultiSelectFilter({ label, options, selected, onToggle }) {
   )
 }
 
+// same input-group chrome and popover as MultiSelectFilter above, but for a single choice:
+// radio inputs instead of checkboxes (same left-of-text indicator, shape signals single- vs
+// multi-select), and picking an option applies it immediately and closes the popover
+function SingleSelectDropdown({ label, options, value, onChange }) {
+  const [open, setOpen] = useState(false)
+  const containerRef = useRef(null)
+
+  useEffect(() => {
+    if (!open) return
+    function handleClickOutside(event) {
+      if (containerRef.current && !containerRef.current.contains(event.target)) setOpen(false)
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [open])
+
+  const current = options.find((option) => option.value === value)
+
+  return (
+    <div className="wishlist-toolbar__dropdown" ref={containerRef}>
+      <div className="wishlist-toolbar__control">
+        <span className="wishlist-toolbar__control-label">{label}</span>
+        <button
+          type="button"
+          className="wishlist-toolbar__control-value"
+          aria-haspopup="true"
+          aria-expanded={open}
+          onClick={() => setOpen((current) => !current)}
+        >
+          {current?.label}
+          <span className="wishlist-toolbar__control-caret" />
+        </button>
+      </div>
+      {open && (
+        <div className="wishlist-toolbar__popover">
+          {options.map((option) => (
+            <label key={option.value} className="wishlist-toolbar__popover-option">
+              <input
+                type="radio"
+                name={`sort-${label}`}
+                checked={option.value === value}
+                onChange={() => {
+                  onChange(option.value)
+                  setOpen(false)
+                }}
+              />
+              {option.label}
+            </label>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
 function PublicWishlistPage({ appName }) {
   const { token } = useParams()
   const [owner, setOwner] = useState(undefined) // undefined = loading, null = invalid link
@@ -237,13 +292,15 @@ function PublicWishlistPage({ appName }) {
       {showToolbarControls && (
         <div className="wishlist-toolbar__controls">
           {showSortControl && (
-            <div className="wishlist-toolbar__control">
-              <span className="wishlist-toolbar__control-label">Sort</span>
-              <select value={sortBy} onChange={(event) => setSortBy(event.target.value)} aria-label="Sort by">
-                <option value="recommended">Highest rated</option>
-                <option value="price">Lowest price</option>
-              </select>
-            </div>
+            <SingleSelectDropdown
+              label="Sort"
+              value={sortBy}
+              onChange={setSortBy}
+              options={[
+                { value: 'recommended', label: 'Highest rated' },
+                { value: 'price', label: 'Lowest price' },
+              ]}
+            />
           )}
           {showLabelFilter && (
             <MultiSelectFilter

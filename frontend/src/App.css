@@ -143,22 +143,6 @@
   white-space: nowrap;
 }
 
-.wishlist-toolbar__control select {
-  font: inherit;
-  font-size: 14px;
-  height: 34px;
-  padding: 6px 10px;
-  border: none;
-  background: var(--code-bg);
-  color: var(--text-h);
-  box-sizing: border-box;
-}
-
-.wishlist-toolbar__control select:focus {
-  outline: 2px solid var(--accent);
-  outline-offset: -2px;
-}
-
 .wishlist-toolbar__dropdown {
   position: relative;
 }
