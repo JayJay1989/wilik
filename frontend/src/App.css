@@ -823,12 +823,15 @@ button:hover {
 .gift-form input[type='checkbox'] {
   /* the text-input rules above (height, padding, border) aren't meant for
      checkboxes -- without this they inflate to a 38px-tall invisible box,
-     making checkbox rows look oddly spaced out */
-  height: auto;
-  width: auto;
+     making checkbox rows look oddly spaced out. Width/height are also pinned
+     to a fixed size rather than "auto": iOS otherwise renders its checked and
+     unchecked states at slightly different native sizes */
+  width: 16px;
+  height: 16px;
   padding: 0;
   border: none;
   background: none;
+  flex: none;
 }
 
 .gift-form__row {
