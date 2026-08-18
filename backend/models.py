@@ -42,6 +42,9 @@ class User(UserMixin, db.Model):
     guest_sort_by_price_enabled = db.Column(db.Boolean, nullable=False, default=False)
     guest_filter_by_label_enabled = db.Column(db.Boolean, nullable=False, default=False)
     guest_filter_by_brand_enabled = db.Column(db.Boolean, nullable=False, default=False)
+    # Per-wishlist opt-in for owner claim management. This lives on User because
+    # Wilik currently has a strict one-user-to-one-wishlist data model.
+    claim_management_enabled = db.Column(db.Boolean, nullable=False, default=False)
     # unguessable token for the public, no-login wishlist link; anyone with it can view + claim items
     share_token = db.Column(db.String(64), unique=True, nullable=False, default=generate_share_token)
     # opt-out of the public directory (see AppSettings.public_directory_enabled) -- the
@@ -81,6 +84,7 @@ class User(UserMixin, db.Model):
             "guest_sort_by_price_enabled": self.guest_sort_by_price_enabled,
             "guest_filter_by_label_enabled": self.guest_filter_by_label_enabled,
             "guest_filter_by_brand_enabled": self.guest_filter_by_brand_enabled,
+            "claim_management_enabled": self.claim_management_enabled,
         }
 
     def public_dict(self):
@@ -135,8 +139,8 @@ class Gift(db.Model):
     # owner-controlled "I got this" flag: pulls the item off their own active list into the received archive
     received = db.Column(db.Boolean, nullable=False, default=False)
 
-    # one row per visitor who has claimed a "copy" of this gift; claim/purchase state is only ever
-    # shown to public-link visitors, never to the owner (would spoil the surprise) -- see to_dict
+    # one row per visitor who has claimed a "copy" of this gift. Owner responses only
+    # include claim status when that wishlist explicitly enables claim management.
     claims = db.relationship("Claim", backref="gift", cascade="all, delete-orphan", lazy="selectin")
 
     def to_dict(self, include_claim_status=False):
@@ -166,9 +170,8 @@ class Gift(db.Model):
 class Claim(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     gift_id = db.Column(db.Integer, db.ForeignKey("gift.id"), nullable=False)
-    # never sent to any visitor (public or owner-browsing) -- only exists so a claimer can re-prove
-    # their claim from another device (verify-claim) and so the owner can see it in the pre-delete
-    # claim-info check (see item_claim_info)
+    # never sent to public visitors. It is returned to an authenticated item owner only
+    # after they explicitly reveal it and their wishlist has enabled claim management.
     claimed_by = db.Column(db.String(100), nullable=False)
     # secret handed to the claimer's own browser so they can unclaim silently, without retyping their name
     claim_token = db.Column(db.String(64), nullable=False, unique=True)

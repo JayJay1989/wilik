@@ -1,8 +1,8 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import StarRating from './StarRating'
 import GiftForm from './GiftForm'
 import ImagePlaceholder from './ImagePlaceholder'
-import { PencilIcon, TrashIcon, ExternalLinkIcon, GripIcon, CheckIcon, UndoIcon } from './Icons'
+import { PencilIcon, TrashIcon, ExternalLinkIcon, GripIcon, CheckIcon, UndoIcon, LockIcon } from './Icons'
 import { formatPrice } from '../formatPrice'
 
 const API_BASE = '/api'
@@ -18,6 +18,7 @@ function GiftCard({
   onDelete,
   onReorder,
   onReceivedChange,
+  onClaimsReset,
   dragState,
   onDragStart,
   onDragMove,
@@ -25,6 +26,26 @@ function GiftCard({
   onDragEnd,
 }) {
   const [isEditing, setIsEditing] = useState(false)
+  const [claimManagerOpen, setClaimManagerOpen] = useState(false)
+  const [claimants, setClaimants] = useState(null)
+  const [claimError, setClaimError] = useState(null)
+  const [claimActionPending, setClaimActionPending] = useState(false)
+  const claimManagerRef = useRef(null)
+
+  useEffect(() => {
+    if (!claimManagerOpen) return undefined
+
+    const previouslyFocused = document.activeElement
+    claimManagerRef.current?.focus()
+    function handleKeyDown(event) {
+      if (event.key === 'Escape') setClaimManagerOpen(false)
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown)
+      previouslyFocused?.focus()
+    }
+  }, [claimManagerOpen])
 
   if (isEditing) {
     return (
@@ -86,6 +107,51 @@ function GiftCard({
     window.addEventListener('pointercancel', finishDrag)
   }
 
+  function openClaimManager(event) {
+    event.stopPropagation()
+    setClaimants(null)
+    setClaimError(null)
+    setClaimManagerOpen(true)
+  }
+
+  function revealClaimants() {
+    setClaimActionPending(true)
+    setClaimError(null)
+    fetch(`${API_BASE}/items/${gift.id}/claims`, { credentials: 'include' })
+      .then((response) => {
+        if (!response.ok) return response.json().then((data) => Promise.reject(new Error(data.error)))
+        return response.json()
+      })
+      .then((data) => setClaimants(data.claimed_by))
+      .catch((error) => setClaimError(error.message || 'Could not reveal claimants'))
+      .finally(() => setClaimActionPending(false))
+  }
+
+  function resetClaims() {
+    const count = gift.claimed_count ?? 0
+    const proceed = confirm(
+      `Reset ${count === 1 ? 'the claim' : `all ${count} claims`} for "${gift.title}"? Visitors will be able to claim it again.`
+    )
+    if (!proceed) return
+
+    setClaimActionPending(true)
+    setClaimError(null)
+    fetch(`${API_BASE}/items/${gift.id}/claims`, {
+      method: 'DELETE',
+      credentials: 'include',
+    })
+      .then((response) => {
+        if (!response.ok) return response.json().then((data) => Promise.reject(new Error(data.error)))
+        return response.json()
+      })
+      .then((updatedGift) => {
+        onClaimsReset(updatedGift)
+        setClaimManagerOpen(false)
+      })
+      .catch((error) => setClaimError(error.message || 'Could not reset claims'))
+      .finally(() => setClaimActionPending(false))
+  }
+
   return (
     <div
       className={classNames.join(' ')}
@@ -102,6 +168,17 @@ function GiftCard({
           <GripIcon />
         </span>
         <span className="gift-card__action-bar-buttons">
+          {(gift.claimed_count ?? 0) > 0 && (
+            <button
+              type="button"
+              className="icon-button"
+              aria-label="Manage claims"
+              title="Manage claims"
+              onClick={openClaimManager}
+            >
+              <LockIcon />
+            </button>
+          )}
           {onReceivedChange && (
             <button
               type="button"
@@ -117,7 +194,7 @@ function GiftCard({
                   fetch(`${API_BASE}/items/${gift.id}/claim-info`, { credentials: 'include' })
                     .then((response) => response.json())
                     .then((data) => {
-                      const count = data.claimed_by.length
+                      const count = data.claimed_count
                       const proceed = confirm(
                         count > 0
                           ? `This item has unlimited quantity, so marking it received won't remove it from your list. It'll just clear the ${count} existing claim${count === 1 ? '' : 's'} so people can keep gifting it. Continue?`
@@ -155,16 +232,15 @@ function GiftCard({
               fetch(`${API_BASE}/items/${gift.id}/claim-info`, { credentials: 'include' })
                 .then((response) => response.json())
                 .then((data) => {
-                  if (data.claimed_by.length === 0) {
+                  if (data.claimed_count === 0) {
                     if (confirm(`Delete "${gift.title}"?`)) onDelete(gift.id)
                     return
                   }
                   const proceed = confirm(
-                    `"${gift.title}" has already been claimed by ${data.claimed_by.length} ${data.claimed_by.length === 1 ? 'person' : 'people'}. (If you received this gift already, use the checkmark instead to archive it to your Received list.) Delete anyway?`
+                    `"${gift.title}" has already been claimed by ${data.claimed_count} ${data.claimed_count === 1 ? 'person' : 'people'}. (If you received this gift already, use the checkmark instead to archive it to your Received list.) Delete anyway?`
                   )
                   if (!proceed) return
                   onDelete(gift.id)
-                  alert(`Deleted. It had been claimed by: ${data.claimed_by.join(', ')}.`)
                 })
             }}
           >
@@ -172,6 +248,57 @@ function GiftCard({
           </button>
         </span>
       </div>
+      {claimManagerOpen && (
+        <div
+          className="claim-manager__backdrop"
+          role="presentation"
+          onClick={(event) => {
+            event.stopPropagation()
+            if (!claimActionPending) setClaimManagerOpen(false)
+          }}
+        >
+          <section
+            ref={claimManagerRef}
+            className="claim-manager"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby={`claim-manager-title-${gift.id}`}
+            tabIndex={-1}
+            onClick={(event) => event.stopPropagation()}
+          >
+            <h3 id={`claim-manager-title-${gift.id}`}>Manage claims</h3>
+            <p>
+              “{gift.title}” has {gift.claimed_count} active {gift.claimed_count === 1 ? 'claim' : 'claims'}.
+            </p>
+            {claimants === null ? (
+              <p className="page__hint">Claimant names remain hidden until you choose to reveal them.</p>
+            ) : (
+              <div className="claim-manager__names">
+                <strong>Claimed by</strong>
+                <ul>
+                  {claimants.map((name, index) => (
+                    <li key={`${name}-${index}`}>{name}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+            {claimError && <p className="form-error">{claimError}</p>}
+            <div className="claim-manager__actions">
+              {claimants === null && (
+                <button type="button" onClick={revealClaimants} disabled={claimActionPending}>
+                  Reveal {gift.claimed_count === 1 ? 'name' : 'names'}
+                </button>
+              )}
+              <button type="button" className="btn-danger" onClick={resetClaims} disabled={claimActionPending}>
+                Reset {gift.claimed_count === 1 ? 'claim' : 'all claims'}
+              </button>
+              <button type="button" onClick={() => setClaimManagerOpen(false)} disabled={claimActionPending}>
+                Close
+              </button>
+            </div>
+          </section>
+        </div>
+      )}
       {gift.image_url ? (
         <img className="gift-card__img" src={gift.image_url} alt={gift.title} />
       ) : (

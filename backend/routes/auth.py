@@ -67,6 +67,9 @@ def update_account():
     current_user.guest_filter_by_brand_enabled = data.get(
         "guest_filter_by_brand_enabled", current_user.guest_filter_by_brand_enabled
     )
+    current_user.claim_management_enabled = data.get(
+        "claim_management_enabled", current_user.claim_management_enabled
+    )
     db.session.commit()
     return jsonify(current_user.to_dict())
 

@@ -87,6 +87,10 @@ function WishlistPage({ currentUser }) {
       })
   }
 
+  function handleClaimsReset(updatedGift) {
+    setItems((current) => current.map((item) => (item.id === updatedGift.id ? updatedGift : item)))
+  }
+
   function handleReorder(draggedId, targetId) {
     const dragged = items.find((item) => item.id === draggedId)
     const target = items.find((item) => item.id === targetId)
@@ -190,6 +194,7 @@ function WishlistPage({ currentUser }) {
               onDelete={handleDelete}
               onReorder={handleReorder}
               onReceivedChange={handleReceivedChange}
+              onClaimsReset={handleClaimsReset}
               dragState={dragState}
               onDragStart={handleDragStart}
               onDragMove={handleDragMove}

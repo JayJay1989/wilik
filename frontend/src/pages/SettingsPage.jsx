@@ -72,6 +72,7 @@ function SettingsPage({ currentUser, onUpdate }) {
   const [guestSortByPrice, setGuestSortByPrice] = useState(currentUser.guest_sort_by_price_enabled)
   const [guestFilterByLabel, setGuestFilterByLabel] = useState(currentUser.guest_filter_by_label_enabled)
   const [guestFilterByBrand, setGuestFilterByBrand] = useState(currentUser.guest_filter_by_brand_enabled)
+  const [claimManagementEnabled, setClaimManagementEnabled] = useState(currentUser.claim_management_enabled)
   const [wishlistError, setWishlistError] = useState(null)
   const [wishlistSaved, setWishlistSaved] = useState(false)
 
@@ -140,6 +141,7 @@ function SettingsPage({ currentUser, onUpdate }) {
         guest_sort_by_price_enabled: guestSortByPrice,
         guest_filter_by_label_enabled: guestFilterByLabel,
         guest_filter_by_brand_enabled: guestFilterByBrand,
+        claim_management_enabled: claimManagementEnabled,
       }),
     }).then((response) => {
       if (!response.ok) {
@@ -164,7 +166,7 @@ function SettingsPage({ currentUser, onUpdate }) {
       <h3>Share your wishlist</h3>
       <div className="card">
         <p className="page__hint" style={{ margin: '0 0 10px' }}>
-          Anyone with this link can view your list and claim items, you'll never see who claimed what
+          Anyone with this link can view your list and claim items
         </p>
         <div className="inline-field">
           <input className="share-link__input" value={shareUrl} readOnly onFocus={(event) => event.target.select()} />
@@ -274,6 +276,20 @@ function SettingsPage({ currentUser, onUpdate }) {
             onChange={(event) => setGuestFilterByBrand(event.target.checked)}
           />
           Let guests filter by brand
+        </label>
+
+        <h3>Claim management</h3>
+        <p className="page__hint" style={{ margin: '-4px 0 0' }}>
+          Claims normally stay anonymous to preserve the surprise. If enabled, claimed items get a lock button that
+          lets you deliberately reveal claimant names or reset their claims.
+        </p>
+        <label className="user-admin__checkbox">
+          <input
+            type="checkbox"
+            checked={claimManagementEnabled}
+            onChange={(event) => setClaimManagementEnabled(event.target.checked)}
+          />
+          Let me reveal and manage claims on this wishlist
         </label>
 
         {wishlistError && <p className="form-error">{wishlistError}</p>}
