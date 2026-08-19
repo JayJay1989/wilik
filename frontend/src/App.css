@@ -602,6 +602,7 @@
 }
 
 .claim-manager {
+  position: relative;
   box-sizing: border-box;
   width: min(440px, 100%);
   padding: 20px;
@@ -610,15 +611,35 @@
   background: var(--bg);
   box-shadow: var(--shadow);
   color: var(--text);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }
 
 .claim-manager h3 {
-  margin-top: 0;
+  margin: 0 32px 0 0;
   color: var(--text-h);
 }
 
+.claim-manager__close {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+}
+
+.claim-manager__hint {
+  font-size: 14px;
+  color: var(--text);
+  text-wrap: pretty;
+}
+
+.claim-manager__suggestion {
+  font-size: 14px;
+  color: var(--text);
+  text-wrap: pretty;
+}
+
 .claim-manager__names {
-  margin-top: 14px;
   padding: 12px 14px;
   border-radius: 8px;
   background: var(--code-bg);
@@ -632,11 +653,13 @@
 .claim-manager__actions {
   display: flex;
   flex-wrap: wrap;
+  align-items: center;
   gap: 8px;
-  margin-top: 18px;
+  margin-top: 8px;
 }
 
 .claim-manager__actions .btn-danger {
+  margin-left: auto;
   border-color: rgba(220, 38, 38, 0.55);
   color: #ef4444;
 }

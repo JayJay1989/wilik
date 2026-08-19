@@ -45,6 +45,11 @@ class User(UserMixin, db.Model):
     # Per-wishlist opt-in for owner claim management. This lives on User because
     # Wilik currently has a strict one-user-to-one-wishlist data model.
     claim_management_enabled = db.Column(db.Boolean, nullable=False, default=False)
+    # when true, the lock icon only shows on already-claimed items -- convenient (see at a
+    # glance what's taken) but leaks claim status just by browsing your own list without
+    # clicking anything, which is exactly what showing it on every item avoids. Off by
+    # default, only meaningful while claim_management_enabled is also on.
+    lock_icon_claimed_only = db.Column(db.Boolean, nullable=False, default=False)
     # unguessable token for the public, no-login wishlist link; anyone with it can view + claim items
     share_token = db.Column(db.String(64), unique=True, nullable=False, default=generate_share_token)
     # opt-out of the public directory (see AppSettings.public_directory_enabled) -- the
@@ -85,6 +90,7 @@ class User(UserMixin, db.Model):
             "guest_filter_by_label_enabled": self.guest_filter_by_label_enabled,
             "guest_filter_by_brand_enabled": self.guest_filter_by_brand_enabled,
             "claim_management_enabled": self.claim_management_enabled,
+            "lock_icon_claimed_only": self.lock_icon_claimed_only,
         }
 
     def public_dict(self):
@@ -108,12 +114,24 @@ class AppSettings(db.Model):
     # fallback dark/light/auto for anyone who hasn't picked their own in Settings yet (stored
     # per-browser in localStorage, see colorScheme.js) -- "dark" matches the app's historical default
     default_color_scheme = db.Column(db.String(10), nullable=False, default="dark")
+    # site-wide kill switch for claim management: even if a user has User.claim_management_enabled
+    # set, the feature stays fully inert (backend blocks it, not just hidden in the UI) while this
+    # is off -- see routes/items.py's claim_management_active(). Defaults off, matching the
+    # per-user opt-in it gates, which also defaults off.
+    claim_management_site_enabled = db.Column(db.Boolean, nullable=False, default=False)
+    # skips the "this item has been claimed" confirmation (and its one-off name reveal)
+    # when deleting a claimed item, going straight to a plain delete confirm instead --
+    # off by default since it's the only thing standing between an owner and silently
+    # deleting something someone already claimed
+    claim_delete_warning_skipped = db.Column(db.Boolean, nullable=False, default=False)
 
     def to_dict(self):
         return {
             "app_name": self.app_name,
             "public_directory_enabled": self.public_directory_enabled,
             "default_color_scheme": self.default_color_scheme,
+            "claim_management_site_enabled": self.claim_management_site_enabled,
+            "claim_delete_warning_skipped": self.claim_delete_warning_skipped,
         }
 
 
